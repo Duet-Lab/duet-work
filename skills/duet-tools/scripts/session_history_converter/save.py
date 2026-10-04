@@ -9,7 +9,8 @@ whatever directory the person names with --dest:
 
     uv run --script save.py <path-to-source> --dest <parent-dir> --name <Name> [--client <Label>] [--start YYMMDD[_HHMM]]
 
-`<Client>` defaults to what the source is: ClaudeChat for a claude.ai export,
+`<Client>` defaults to what the source is: ClaudeChat for a claude.ai export
+or conversation JSON,
 ChatGPT for a chatgpt.com export, Gemini for a gemini.google.com export,
 GoogleAI for a Google AI Mode export or saved page, DeepSeek for a DeepSeek
 export, ClaudeCode plus the model family for a Claude Code session, Codex
@@ -36,6 +37,7 @@ from saving import first_timestamp, save_as_folder  # noqa: E402
 
 CLIENT_BY_SOURCE = {
     "codex_jsonl": "Codex",
+    "claude_chat_json": "ClaudeChat",
     "claude_export": "ClaudeChat",
     "chatgpt_export": "ChatGPT",
     "gemini_export": "Gemini",

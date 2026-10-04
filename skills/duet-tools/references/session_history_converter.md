@@ -97,7 +97,9 @@ source, so it lives in shared modules and each source only feeds them:
 - `sources/` — one file per source, each exposing `detect(path)` and
   `load_atoms(path)`: `claude_jsonl.py` (Claude Code sessions), `codex_jsonl.py` (local
   Codex / ChatGPT Code/Work rollouts),
-  `claude_export.py` (claude.ai exports), `chatgpt_export.py` (chatgpt.com
+  `claude_export.py` (claude.ai exports), `claude_chat_json.py` (a claude.ai
+  conversation as the site's own API returns it — the one claude.ai source
+  that carries tool calls with their inputs), `chatgpt_export.py` (chatgpt.com
   exports), `gemini_export.py` (gemini.google.com exports),
   `google_export.py` (Google AI
   Mode exports made by the extension), `google_saved_page.py` (a Google AI

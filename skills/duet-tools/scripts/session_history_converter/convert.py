@@ -15,6 +15,9 @@ Sources today (sources/<module>.py, each exposing detect(path) and load_atoms(pa
 - **claude_jsonl** — a Claude Code session (`~/.claude/projects/*/<sessionId>.jsonl`).
   A turn can include tool calls, prompts that arrived while the agent was
   still working on the previous turn, and interrupts.
+- **claude_chat_json** — a claude.ai conversation as the site's own API returns it,
+  JSON with the whole message tree; the only claude.ai source that carries
+  tool calls with their inputs.
 - **claude_export** — a claude.ai export, markdown, '## User:' / '## Assistant:' sections.
 - **chatgpt_export** — a chatgpt.com export, markdown, '## Prompt:' / '## Response:'
   sections; progress messages shown before the model's reasoning become
@@ -55,7 +58,7 @@ to the source file:
     <the assistant's words, verbatim>
 
 When a turn holds more than that pair (local Claude Code and Codex
-sessions can produce this, and ChatGPT exports), `Tool_<Name>`, "Inline Prompt", "Intermediate
+sessions can produce this, claude.ai conversation JSON and ChatGPT exports), `Tool_<Name>`, "Inline Prompt", "Intermediate
 Response" and "Interrupt" sections appear between them, sharing one running
 number within the file: `## Tool_Bash:01`, `## Intermediate Response:02`,
 and so on. The model's reasoning (thinking) and tool call results are
@@ -84,6 +87,7 @@ sys.path.insert(0, str(Path(__file__).parent))  # or __pycache__ ends up on the 
 from turns import render_turn, split_turns, turn_filename  # noqa: E402
 from sources import (  # noqa: E402
     chatgpt_export,
+    claude_chat_json,
     claude_export,
     claude_jsonl,
     codex_jsonl,
@@ -95,7 +99,7 @@ from sources import (  # noqa: E402
 
 # cheapest/most specific detect() first, most general last; gemini_export must
 # precede claude_export, which also claims any file with a '## User:' line
-SOURCES = [codex_jsonl, claude_jsonl, google_saved_page, google_export, deepseek_export, gemini_export, chatgpt_export, claude_export]
+SOURCES = [codex_jsonl, claude_jsonl, claude_chat_json, google_saved_page, google_export, deepseek_export, gemini_export, chatgpt_export, claude_export]
 
 TURN_FILE_RE = re.compile(r"^\d{2,}(?:_\d{4}(?:_\d{4})?)?\.md$")  # the names turn_filename() produces
 

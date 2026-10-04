@@ -1,0 +1,75 @@
+{
+  "uuid": "c0000000-0000-4000-8000-000000000000",
+  "name": "Report tool",
+  "current_leaf_message_uuid": "m6",
+  "chat_messages": [
+    {
+      "uuid": "m1",
+      "sender": "human",
+      "text": "",
+      "parent_message_uuid": "00000000-0000-4000-8000-000000000000",
+      "created_at": "2026-01-01T10:00:00.000000Z",
+      "content": [{"type": "text", "text": "Send a report, then answer."}],
+      "attachments": [{"file_name": "protocol.md", "extracted_content": "## Protocol\n\nNever rendered."}],
+      "files": [{"file_kind": "image", "file_name": "screenshot.png"}]
+    },
+    {
+      "uuid": "m2",
+      "sender": "assistant",
+      "text": "",
+      "parent_message_uuid": "m1",
+      "created_at": "2026-01-01T10:00:05.000000Z",
+      "stop_reason": "end_turn",
+      "content": [
+        {"type": "thinking", "thinking": "", "summaries": [{"summary": "Never rendered."}], "start_timestamp": "2026-01-01T10:00:01.000000Z"},
+        {"type": "text", "text": "Reporting first.", "start_timestamp": "2026-01-01T10:00:02.000000Z"},
+        {"type": "tool_use", "name": "duet:turn_report", "input": {"report": "### Report\n\nOne line."}, "start_timestamp": "2026-01-01T10:00:03.000000Z"},
+        {"type": "tool_result", "name": "duet:turn_report", "content": [{"type": "text", "text": "Never rendered."}], "start_timestamp": "2026-01-01T10:00:04.000000Z"},
+        {"type": "text", "text": "Done.", "start_timestamp": "2026-01-01T10:00:05.000000Z"}
+      ]
+    },
+    {
+      "uuid": "m3",
+      "sender": "human",
+      "text": "",
+      "parent_message_uuid": "m2",
+      "created_at": "2026-01-01T10:01:00.000000Z",
+      "content": [{"type": "text", "text": "Now the long version."}]
+    },
+    {
+      "uuid": "m4",
+      "sender": "assistant",
+      "text": "",
+      "parent_message_uuid": "m3",
+      "created_at": "2026-01-01T10:01:03.000000Z",
+      "stop_reason": "user_canceled",
+      "content": [{"type": "thinking", "thinking": "", "summaries": [{"summary": "Stopped before any text."}], "start_timestamp": "2026-01-01T10:01:01.000000Z"}]
+    },
+    {
+      "uuid": "m5",
+      "sender": "human",
+      "text": "",
+      "parent_message_uuid": "m4",
+      "created_at": "2026-01-01T10:02:00.000000Z",
+      "content": [{"type": "text", "text": "Just the short one."}]
+    },
+    {
+      "uuid": "m6-regenerated-away",
+      "sender": "assistant",
+      "text": "",
+      "parent_message_uuid": "m5",
+      "created_at": "2026-01-01T10:02:04.000000Z",
+      "stop_reason": "end_turn",
+      "content": [{"type": "text", "text": "A reply on a side branch, never rendered.", "start_timestamp": "2026-01-01T10:02:04.000000Z"}]
+    },
+    {
+      "uuid": "m6",
+      "sender": "assistant",
+      "text": "",
+      "parent_message_uuid": "m5",
+      "created_at": "2026-01-01T10:02:09.000000Z",
+      "stop_reason": "end_turn",
+      "content": [{"type": "text", "text": "Short one.", "start_timestamp": "2026-01-01T10:02:09.000000Z"}]
+    }
+  ]
+}

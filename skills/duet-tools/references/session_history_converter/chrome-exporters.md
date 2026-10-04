@@ -63,6 +63,65 @@ This is the actual source of the `## User:` / `## Assistant:` export format
 handled by `sources/claude_export.py` (confirmed against a real export that
 carries this exact signature).
 
+## claude.ai: the conversation JSON the page itself loads
+
+No extension. Reach for it when the tool calls of a claude.ai chat matter —
+reports sent through an MCP tool, searches, commands. The exporter above
+keeps only the names of the tools a reply called, not what was passed to
+them; Save Page As keeps only the messages on screen at that moment, with
+every tool block collapsed. The chat page loads the whole conversation from
+the site's own API in one response, and that response is the export:
+
+```
+https://claude.ai/api/organizations
+https://claude.ai/api/organizations/<uuid>/chat_conversations/<chat-id>?tree=True&rendering_mode=messages&render_all_tools=true
+```
+
+The first address lists the account's organizations, each with a `uuid`;
+`<chat-id>` is the tail of the chat's own address.
+
+This is not cross-platform: the agent needs a plugin that drives the
+person's own browser, where they are signed in to claude.ai, and each agent
+has its own. A plain web request, `curl`, or an automated browser with a
+fresh profile cannot do it: none of them carries the person's sign-in, and
+the sign-in is never copied out of the browser to give it to them.
+
+**Claude Code** — checked 2026-10-04 in the VS Code extension, with the
+Claude in Chrome extension installed in the browser.
+
+1. The browser tools (`mcp__claude-in-chrome__*`) are not in the session
+   until the person types `@browser` in the chat, for example
+   `@browser:new_tab claude.ai`. The agent cannot switch them on itself. An
+   agent that lacks them asks the person for exactly that line and offers
+   nothing else in its place.
+2. Open the chat's address in a tab of the agent's own.
+3. With the JavaScript tool, request both addresses from inside the page.
+   Keep the response in a page variable and return only counts — messages,
+   tool calls. The body is too large for a tool result, and the extension
+   blocks a result that looks like cookie or query-string data.
+4. Ask the person for a yes to the download, naming the file and its size,
+   then save the response from the page as a `.json` file; it lands in the
+   browser's download folder.
+5. Convert it with `save.py` and close the tab.
+
+**Other agents** (Codex, Gemini, Kimi) — not checked. The same job needs
+that agent's own browser plugin; which one, and how the person switches it
+on, is not recorded here yet. Add it as its own entry when it is checked.
+
+**No browser plugin at all** — the person opens the two addresses
+themselves and saves the second response as a `.json` file.
+
+The API is internal and undocumented: it answered this way on 2026-10-04
+and may change.
+
+Recognized by its top-level `chat_messages` and `current_leaf_message_uuid`;
+handled by `sources/claude_chat_json.py` (confirmed against a real
+conversation of 94 prompts and 96 tool calls, 2026-10-04, compared prompt by
+prompt with the extension's export of the same chat). The JSON also holds
+what the turn files leave out: thinking summaries, tool results, the text of
+attached files, and the side branches of regenerated replies. Images are
+not in it.
+
 ## ChatGPT Exporter - ChatGPT to PDF, MD, and more
 
 [Chrome Web Store](https://chromewebstore.google.com/detail/chatgpt-exporter-chatgpt/ilmdofdhpnhffldihboadndccenlnfll)
