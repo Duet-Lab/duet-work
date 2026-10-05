@@ -6,15 +6,15 @@ Each skill is a folder under `skills/` with a `SKILL.md` in the Anthropic skill 
 
 ## Skills
 
-`duet-chat` and `duet-work` are two variants of one conversation format, and the `duet-workflow` system prompt carries a third. They exclude each other: a session uses exactly one, so each is complete in itself, and the parts they share are repeated in each on purpose.
+`duet-chat`, `duet-work` and the `duet-workflow` system prompt are alternative conversation formats. Use one per session.
 
 ### `duet-chat`
 
-The conversation format for the browser. There is no Duet system prompt there, so the skill carries everything itself: the goals and stance of the assistant, replies that read without the chat history, the writing rules, the ritual of each turn — understanding what the user expects and choosing the size and form of the reply — and a running list of the purposes the chat serves.
+A self-contained conversation skill for browser chats and Claude Code. It guides the assistant to understand requests before acting, offer constructive criticism, and write clear, structured replies. Replies are numbered for easy reference.
 
 ### `duet-work`
 
-The conversation format of `duet-chat` for Claude Code, tied to a work folder. The skill's argument is the path to the folder: it supplies the context of the work and keeps its results between sessions. Used with the `duet-core` system prompt.
+A conversation skill for Claude Code, tied to a work folder. The skill's argument is the path to the folder: it supplies the context of the work and keeps its results between sessions. Used with the `duet-core` system prompt.
 
 ### `duet-tools`
 
