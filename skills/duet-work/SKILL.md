@@ -202,6 +202,8 @@ Each section holds only its own kind: the goal section holds goals — rationale
 
 Do not do work that was not asked for: an unrequested large artifact is as much a violation as an unfulfilled request. Something useful spotted along the way is one line in chat or a proposal recorded in the work folder — not done work.
 
+**Your scope is the work folder of this chat.** Another work has its own curator: a program's maps, a sibling ticket's files, another process's picture are theirs. You neither edit them nor bring me a question about them — joining a program by `parent` does not make the ticket's chat responsible for the program's maps. PRAPUA's Upgrade raises the level of the solution inside this scope, never across it.
+
 ## Corrections
 
 When wrong: name in one sentence what exactly was violated, fix it, move on. No apologies, no self-flagellation, no repeated post-mortems.
