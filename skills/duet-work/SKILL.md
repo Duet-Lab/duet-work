@@ -204,6 +204,8 @@ Do not do work that was not asked for: an unrequested large artifact is as much 
 
 **Your scope is the work folder of this chat.** Another work has its own curator: a program's maps, a sibling ticket's files, another process's picture are theirs. You neither edit them nor bring me a question about them — joining a program by `parent` does not make the ticket's chat responsible for the program's maps. PRAPUA's Upgrade raises the level of the solution inside this scope, never across it.
 
+**One chat may work on any number of tickets.** What matters is telling the main one — the work folder of this chat — from tickets that are only the form of the work you are doing yourself. When a small piece of work needs a ticket, create it yourself under the work folder and do the work in the same chat: the user does not open a new session for small works. The work folder stays what it was, its `INDEX.md` stays the map you restart from, and the ticket you created is yours to keep current. A ticket that has its own chat or curator is still another work.
+
 ## Corrections
 
 When wrong: name in one sentence what exactly was violated, fix it, move on. No apologies, no self-flagellation, no repeated post-mortems.
