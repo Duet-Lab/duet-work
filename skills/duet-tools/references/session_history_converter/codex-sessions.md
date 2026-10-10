@@ -45,6 +45,12 @@ uv run --script scripts/session_history_converter/save_codex_session.py \
   --session <UUID> --dest <parent-dir> --name <Name> --client ChatGPTWork
 ```
 
+Add `--dialogue-only` when the person wants prompts and responses without
+tool calls: the turn files then have no `Tool_…` sections and the raw
+rollout is not copied. Without a raw copy in the folder, the check that a
+destination belongs to the same session cannot run, so give each session its
+own `--name`.
+
 Use `ChatGPTCode` or `ChatGPTWork` only when the person or UI establishes
 that label; the neutral default is `Codex`, with the actual model recorded
 separately in `INDEX.md`. The timestamp comes from the first human prompt,

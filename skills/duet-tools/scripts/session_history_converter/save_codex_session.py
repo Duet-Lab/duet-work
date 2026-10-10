@@ -10,6 +10,7 @@ Without --dest/--name, list matches without writing. Search by workspace,
 --codex-home defaults to CODEX_HOME or ~/.codex. Both sessions and
 archived_sessions are searched. UI mode cannot be inferred from the log:
 use --client ChatGPTWork or ChatGPTCode when known; default is Codex.
+--dialogue-only saves prompts and responses without tool calls or the raw copy.
 """
 import argparse
 import json
@@ -133,7 +134,7 @@ def format_listing(sessions: list[SessionInfo]) -> str:
         for s in sessions)
 
 
-def save_session(info: SessionInfo, dest: Path, name: str, client: str = "Codex") -> Path:
+def save_session(info: SessionInfo, dest: Path, name: str, client: str = "Codex", dialogue_only: bool = False) -> Path:
     for label in (name, client):
         if not label.strip() or label in (".", "..") or any(c in label for c in '/\\\0'):
             raise ValueError("name and client must be non-empty folder labels, not paths")
@@ -152,7 +153,9 @@ def save_session(info: SessionInfo, dest: Path, name: str, client: str = "Codex"
                 metadata = session_metadata(old)
                 if (metadata.get("id") or metadata.get("session_id")) != info.session_id:
                     raise ValueError(f"destination belongs to another session: {target}")
-        out = save_as_folder(snapshot, atoms, dest, client, name, start)
+        out = save_as_folder(snapshot, atoms, dest, client, name, start, dialogue_only=dialogue_only)
+        if dialogue_only and (out / snapshot.name).exists():
+            print(f"warning: raw session copy from an earlier full save retained: {snapshot.name}", file=sys.stderr)
         written = {turn_filename(n, turn) for n, turn in enumerate(split_turns(atoms), 1)}
         stale = stale_turn_files(out, written)
         if stale:
@@ -169,6 +172,7 @@ def main():
     ap.add_argument("--dest", type=Path)
     ap.add_argument("--name")
     ap.add_argument("--client", default="Codex", help="Codex, ChatGPTCode or ChatGPTWork (explicit UI label)")
+    ap.add_argument("--dialogue-only", action="store_true", help="save prompts and responses only: no tool calls in the turn files, no raw session copy")
     args = ap.parse_args()
     if bool(args.dest) != bool(args.name):
         ap.error("saving needs both --dest and --name")
@@ -184,7 +188,7 @@ def main():
             sessions = sessions[:1]
         if len(sessions) != 1:
             ap.error(f"saving needs one unambiguous session, found {len(sessions)}; list first, then give --session UUID")
-        out = save_session(sessions[0], args.dest, args.name, args.client)
+        out = save_session(sessions[0], args.dest, args.name, args.client, args.dialogue_only)
         print(f"saved session {sessions[0].session_id} -> {out}")
     except (ValueError, OSError) as exc:
         ap.exit(1, f"error: {exc}\n")

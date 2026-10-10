@@ -10,6 +10,7 @@ import pytest
 
 from saving import folder_name, save_as_folder
 from sources import claude_export
+from turns import Atom
 
 CONVERTER_DIR = Path(__file__).resolve().parents[2] / "scripts" / "session_history_converter"
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -33,6 +34,35 @@ def test_save_as_folder_copies_source_and_writes_turns(tmp_path: Path):
     out_dir = save_as_folder(source, atoms, tmp_path / "source", "ClaudeChat", "Столицы")
     assert out_dir == tmp_path / "source" / "260915_1131_ClaudeChat_Столицы"  # first timestamp in the export
     assert sorted(p.name for p in out_dir.iterdir()) == ["01_0915_1131.md", "input.md"]
+
+
+def test_dialogue_only_drops_tool_calls_and_the_source_copy(tmp_path: Path):
+    source = tmp_path / "session.jsonl"
+    source.write_text("{}\n", encoding="utf-8")
+    t = lambda minute: datetime(2026, 10, 10, 10, minute)
+    atoms = [
+        Atom("prompt", text="first question", timestamp=t(1)),
+        Atom("tool_call", tool_name="exec", tool_input={"input": "cat secret"}),
+        Atom("response", text="interim note", timestamp=t(2)),
+        Atom("tool_call", tool_name="exec", tool_input={"input": "ls"}),
+        # an inline prompt: it follows a tool call, so it stays in turn 1
+        Atom("prompt", text="one more thing", timestamp=t(3)),
+        Atom("response", text="first answer", timestamp=t(4)),
+        Atom("prompt", text="second question", timestamp=t(5)),
+        Atom("response", text="second answer", timestamp=t(6)),
+    ]
+    full = save_as_folder(source, atoms, tmp_path / "full", "Codex", "Sample")
+    slim = save_as_folder(source, atoms, tmp_path / "slim", "Codex", "Sample", dialogue_only=True)
+
+    turn_files = ["01_1010_1001.md", "02_1010_1005.md"]
+    assert sorted(p.name for p in full.iterdir()) == turn_files + ["session.jsonl"]
+    assert sorted(p.name for p in slim.iterdir()) == turn_files  # same turn boundaries, no source copy
+
+    first = (slim / turn_files[0]).read_text(encoding="utf-8")
+    assert "Tool_" not in first and "cat secret" not in first
+    for kept in ("first question", "interim note", "one more thing", "first answer"):
+        assert kept in first
+    assert "## Tool_exec:01" in (full / turn_files[0]).read_text(encoding="utf-8")
 
 
 def _run_save(*args: str) -> subprocess.CompletedProcess:

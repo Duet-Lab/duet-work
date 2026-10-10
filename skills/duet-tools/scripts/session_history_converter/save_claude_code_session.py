@@ -165,11 +165,11 @@ def format_listing(sessions: list[SessionInfo]) -> str:
     return "\n".join(lines)
 
 
-def save_session(info: SessionInfo, dest: Path, name: str, client: str | None = None) -> Path:
+def save_session(info: SessionInfo, dest: Path, name: str, client: str | None = None, dialogue_only: bool = False) -> Path:
     if info.start is None:
         sys.exit(f"session {info.session_id} has no human prompt to date it by")
     atoms = claude_jsonl.load_atoms(info.path)
-    return save_as_folder(info.path, atoms, dest, client or client_label(info.model), name, info.start)
+    return save_as_folder(info.path, atoms, dest, client or client_label(info.model), name, info.start, dialogue_only=dialogue_only)
 
 
 def main() -> None:
@@ -179,6 +179,7 @@ def main() -> None:
     ap.add_argument("--name", help="the <Name> part of <YYMMDD>_<HHMM>_<Client>_<Name>")
     ap.add_argument("--session", default="latest", help="session id (prefix is enough) or 'latest' (default)")
     ap.add_argument("--client", help="override the <Client> part (default: ClaudeCode + model family)")
+    ap.add_argument("--dialogue-only", action="store_true", help="save prompts and responses only: no tool calls in the turn files, no raw session copy")
     args = ap.parse_args()
 
     sessions = sessions_for(Path(args.folder))
@@ -198,7 +199,7 @@ def main() -> None:
     if chosen is None:
         sys.exit("no matching session")
 
-    out_dir = save_session(chosen, args.dest, args.name, args.client)
+    out_dir = save_session(chosen, args.dest, args.name, args.client, args.dialogue_only)
     turn_files = sorted(p.name for p in out_dir.iterdir() if p.suffix == ".md")
     print(f"{len(turn_files)} turns -> {out_dir}")
 

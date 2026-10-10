@@ -80,6 +80,7 @@ def main() -> None:
     ap.add_argument("--name", required=True, help="the <Name> part of <YYMMDD>_<HHMM>_<Client>_<Name>")
     ap.add_argument("--client", help="override the <Client> part")
     ap.add_argument("--start", help="YYMMDD or YYMMDD_HHMM when the source carries no timestamps")
+    ap.add_argument("--dialogue-only", action="store_true", help="save prompts and responses only: no tool calls in the turn files, no copy of the source")
     args = ap.parse_args()
     if not args.source.is_file():
         sys.exit(f"no such file: {args.source}")
@@ -94,7 +95,7 @@ def main() -> None:
         if start is None:
             sys.exit("this source carries no timestamps; give the start with --start YYMMDD[_HHMM]")
 
-    out_dir = save_as_folder(args.source, atoms, args.dest, client, args.name, start, date_only)
+    out_dir = save_as_folder(args.source, atoms, args.dest, client, args.name, start, date_only, dialogue_only=args.dialogue_only)
     turn_files = sorted(p.name for p in out_dir.iterdir() if p.suffix == ".md" and p.name != args.source.name)
     print(f"{len(turn_files)} turns -> {out_dir}")
 

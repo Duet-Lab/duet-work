@@ -44,6 +44,15 @@ uv run --script scripts/session_history_converter/save_claude_code_session.py <w
 uv run --script scripts/session_history_converter/save_claude_code_session.py <workspace-folder> --dest <parent-dir> --name <Name> [--session <id>|latest] [--client <Label>]
 ```
 
+**Prompts and responses only** — every saving entry point (`save.py`,
+`save_claude_code_session.py`, `save_codex_session.py`) takes
+`--dialogue-only`: the turn files carry no tool calls, and the source is not
+copied into the folder, because a raw session holds the same tool calls with
+their results. Use it when the person asks to keep only what was said. Turn
+boundaries and file names are the same as in a full save. A source copy left
+in the folder by an earlier full save is not deleted; say so and let the
+person decide.
+
 **Find or save a local ChatGPT Code / Work (Codex) session** — read
 [session_history_converter/codex-sessions.md](session_history_converter/codex-sessions.md)
 for title/UUID/workspace discovery, read-only analysis, export commands and
