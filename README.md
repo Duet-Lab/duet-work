@@ -2,7 +2,7 @@
 
 A library of skills for working with an AI assistant. Some of them belong to [Duet](https://github.com/alatyshau/duet), a human–AI operating environment; the rest work on their own.
 
-Each skill is a folder under `skills/` with a `SKILL.md` in the Anthropic skill format, so it can be loaded by Claude Code, claude.ai and other clients that read that format. The Duet system prompts live under `system-prompts/`.
+Each skill is a folder under `skills/` with a `SKILL.md` in the Anthropic skill format, so it can be loaded by Claude Code, claude.ai and other clients that read that format. Experimental system prompts live under `system-prompts/`; the public `duet-core` prompt ships with Duet, not this repository.
 
 ## Skills
 
@@ -15,6 +15,14 @@ A self-contained conversation skill for browser chats and Claude Code. It guides
 ### `duet-work`
 
 A conversation skill for Claude Code, tied to a work folder. The skill's argument is the path to the folder: it supplies the context of the work and keeps its results between sessions. Used with the `duet-core` system prompt.
+
+### `duet-executor`
+
+**Legacy; a candidate for removal.** Retained for observation, not part of the active DuetLab setup. Contains the former Executor instructions for focused execution, engineering discipline, and human review. Explicit invocation only.
+
+### `duet-vizir`
+
+**Legacy; a candidate for removal.** Retained for observation, not part of the active DuetLab setup. Contains the former Vizir instructions for coordination, delegation, plan maintenance, and human approval gates. Explicit invocation only.
 
 ### `duet-tools`
 
@@ -32,10 +40,12 @@ Know-how for tuning Claude Code and its VS Code extension: where the relevant fi
 
 Each file under `system-prompts/` is a Claude Code output style. A business gets one as its system prompt through the `system_prompt` field of its `context.json`, and Duet deploys it to Claude Code, Codex and Kimi Code.
 
-### `duet-core`
+### Public foundation: `duet-core`
 
-The foundation of a Duet session: orientation in the business through Duet MCP, the model of contexts, the manifest, alpha paths, the memory policy and the writing rules. It is the Duet platform prompt (`packages/instructions/bootstrapper.md` in Duet), taken as a standalone system prompt.
+The public foundation is [`packages/instructions/duet-core.md` in Duet](https://github.com/alatyshau/duet/blob/main/packages/instructions/duet-core.md). Host installs it as the `duet-core` output style. This repository does not carry a second copy.
+
+Use `duet-core` by itself for the standard Duet environment, or explicitly invoke the `duet-work` skill on top of it for the experimental work format. A business using the standard foundation does not need a `system_prompt` override. While the skills are being stabilized, this repository is private and access is granted personally.
 
 ### `duet-workflow`
 
-The complete Duet session for Claude Code, needing no conversation skill: `duet-core`, the conversation format of `duet-work`, and the turn protocol, in which the Duet server leads the agent through the session and every turn and the agent reports each step with a tool call. In development; the server side of the protocol does not exist yet.
+A self-contained work-session prompt with the Duet platform foundation, conversation rules, ticket operations, and work-folder memory. The agent manages the turn, using `turn_report` for its interpretation and `turn_plan` for a multi-step checklist; these tools display the supplied text and state, not a server-managed session. Uses the Backend tool set with `business_tree`. An alternative to `duet-core` plus `duet-work`, not an additional conversation layer.
