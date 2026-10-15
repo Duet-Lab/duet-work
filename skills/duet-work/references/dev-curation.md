@@ -30,7 +30,11 @@ Within the assigned work, the Curator prepares and dispatches tasks without maki
 
 Organize these as distinct phases, normally `01-analysis_design` and `02-implementation`, with further phases added as needed. A phase can contain several rolls; changing phases need not change the engineer or restart their session. The first establishes an adequately understood problem and design; the second implements and validates the solution. Existing useful analysis is input, not something to reproduce ceremonially.
 
-Name the work directly: **analysis & design**, grounded in the affected **domain model**, then **architecture review** before implementation and **code review** afterwards. Give the goal, relevant context and actual constraints. Competent engineers choose their investigation, design method and useful artifacts. Do not convert these terms into a mandatory sequence of exercises or a prescribed collection of documents.
+Name the work directly: **analysis & design**, grounded in the affected **domain model**, then **architecture review** before implementation and **code review** afterwards. Give the goal, relevant context and actual constraints.
+
+**The thesaurus comes first.** The written form of the domain model is the ticket's `thesaurus.md`. Before the code is changed, check whether the area the work enters has a thesaurus and whether it is current; if not, its making opens analysis & design: a roll of its own in the phase folder, with an executor as author and independent reviewers, following [Thesaurus Writing](thesaurus-writing.md). Do not write it yourself: building it is investigation of code and documentation. Supply the user's words and questions, bring the result to the user, and let the design of the change begin on the accepted thesaurus, because a design built on a misunderstood system has to be redone. Architecture review checks first that the design stands on it.
+
+Beyond the thesaurus, competent engineers choose their investigation, design method and useful artifacts. Do not convert these terms into a mandatory sequence of exercises or a prescribed collection of documents.
 
 Make the resulting understanding and design available in the phase's materials so other participants can examine them. Reviewers assess their substance, not just the existence of a document; the Curator ensures that review and required user discussions have occurred. An open question about intended behavior stays on the agenda. Do not require the user to approve every technical choice or dictate the engineer's solution.
 

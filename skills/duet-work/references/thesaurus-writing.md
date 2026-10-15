@@ -1,8 +1,8 @@
 # Thesaurus Writing
 
-Read this before creating a ticket's `thesaurus.md` and before editing one: a change to one basic entry reaches every entry that stands on it, and the depth of the check below is chosen by what the change means, not by how many entries it touches. The file holds the structure of an entry, the procedure that produces a thesaurus a reader can rely on, the reviews built into that procedure, a sample entry, and the ways a thesaurus has already gone wrong. SKILL.md says who owns the thesaurus and what it is for; this file says how to build one that works.
+Read this before creating a ticket's `thesaurus.md` and before editing one: a change to one basic entry reaches every entry that stands on it, and the depth of the check below is chosen by what the change means, not by how many entries it touches. The file holds the structure of an entry, the procedure that produces a thesaurus a reader can rely on, the reviews built into that procedure, a sample entry, and the ways a thesaurus has already gone wrong. SKILL.md says what the thesaurus is for; this file says who makes it and how to build one that works.
 
-Contents: what the result must do · kinds of statements · the entry · a sample entry · the procedure (seven steps) · rubric for the reviewer · how thesauri have gone wrong.
+Contents: what the result must do · who makes the thesaurus · kinds of statements · the entry · a sample entry · the procedure (seven steps) · rubric for the reviewer · how thesauri have gone wrong.
 
 ## What the result must do
 
@@ -16,6 +16,18 @@ The thesaurus has done its job when four things hold:
 - the user has said that the thesaurus is accepted; silence is not acceptance.
 
 The opposite is a file written «для галочки»: it exists, it is linked from INDEX, and the user re-reads it fifteen times and still asks. The KIM001 thesaurus went through exactly that before these rules were written. Andrei: «Надо стараться ради читателя, а не ради того, чтобы закрыть файл для галочки».
+
+## Who makes the thesaurus
+
+The Curator decides that a thesaurus is needed and organizes its making; the Curator does not write it. Building one means reading code and documentation to the end and checking every claim against its source, which is technical investigation, and the Curator's attention belongs to order, the agenda and the conversation with the user. Andrei (2026-10-15): «Куратор не должен заниматься работой, т.к. его токены сосредоточены на поддержании порядка. Качество его работы из-за этого всегда ниже (расфокусированно)».
+
+- **When.** Before the work changes anything in an area — in software, before the code is changed — the Curator checks whether the area has a thesaurus and whether it still describes the area as the work will enter it. No thesaurus, or one that is out of date, is the reason to have one made.
+- **Where.** In software work, the thesaurus is the first part of the analysis & design phase: a roll of its own in that phase folder, with an author and independent reviewers among the executors, organized as [Development curation](dev-curation.md) says. In other work, a roll or a phase of the work it serves.
+- **What the Curator supplies.** Executors do not see the chat. The Curator gives the author the user's words for step 1, verbatim and with the meanings the user gave them, and the user's questions for the regression list of step 5, and keeps relaying new ones as they come.
+- **Acceptance.** The Curator brings the thesaurus to the user, relays the user's questions to the author and does not treat silence as acceptance. The design of a change is built on the accepted thesaurus.
+- **The exception.** When the Curator is itself the author of the work — a skill, a process — and the thesaurus needs no investigation of code or documentation, the Curator may write it.
+
+In the procedure below, «the author» is the participant who writes the thesaurus — normally an executor.
 
 ## Kinds of statements
 
@@ -108,7 +120,7 @@ Check every word used in a definition: it is either ordinary, or in the one-mean
 
 ### 3. Write the entries
 
-Write every entry in the structure above, foundations first, with the status marks in place. Write the head of the file last, when the one-meaning words are known from the entries. Keep the thesaurus about language: how the system is designed and why belongs to analysis and design artifacts, which refer to these terms.
+Write every entry in the structure above, foundations first, with the status marks in place. Write the head of the file last, when the one-meaning words are known from the entries. Keep the thesaurus about the system as it is and the meanings agreed for it: how the change is designed and why belongs to the analysis and design artifacts, which refer to these terms.
 
 ### 4. Review it yourself as a cold reader
 
@@ -127,7 +139,7 @@ Then run the regression questions of step 5 if any exist from an earlier round: 
 
 ### 5. Review by the user, through questions
 
-Hand the file to the user and treat every question about a term inside the promised scope as a defect report on an entry, not as a question to answer in chat. «Что такое authority?» means the entry that used the word did not define it. «Разве это не одно и то же?» means two entries name neighbouring things without saying what makes them alike and what separates them. «Где написано, может ли Kimi читать?» means the entry promised a rule and did not state it. «Т.е. если …?» is a boundary case to record. Answer the question in the chat and fix the entry in the same turn; then re-read the entry and ask whether it would have answered the question on its own.
+The Curator hands the file to the user and relays every question verbatim to the author. Treat every question about a term inside the promised scope as a defect report on an entry, not as a question to answer in chat. «Что такое authority?» means the entry that used the word did not define it. «Разве это не одно и то же?» means two entries name neighbouring things without saying what makes them alike and what separates them. «Где написано, может ли Kimi читать?» means the entry promised a rule and did not state it. «Т.е. если …?» is a boundary case to record. The author fixes the entry, re-reads it and asks whether it would have answered the question on its own; the Curator answers the user from the fixed entry, not from a separate explanation.
 
 A question outside the promised scope — about a neighbouring system, about a design choice the thesaurus only names — is first judged: if the term belongs in the thesaurus, it is harvested; if not, the answer stays in the chat and the scope line in the head says what the file does not cover.
 
@@ -144,7 +156,10 @@ The reviewer reports on a review board in the conventions of the business, in th
 
 ### 7. Accept, use, maintain
 
-The thesaurus is accepted when the substantive findings are closed, the regression questions are answered from the text, and the user has said so; the user's silence, fatigue or a postponed reading are not acceptance. From then on, assignments, review boards and the PR use its terms, and the Curator maintains it: a term that emerges in a conversation gets an entry when it is settled; a real disagreement is marked «disputed» with a link to the open agenda item rather than settled by editing; a correction from the user is applied by rewriting the entry, re-reading the entries that depend on it and re-running the questions. A thesaurus that is maintained by appending sentences at the point of each question returns to the state this procedure exists to prevent.
+The thesaurus is accepted when the substantive findings are closed, the regression questions are answered from the text, and the user has said so; the user's silence, fatigue or a postponed reading are not acceptance. From then on, assignments, review boards and the PR use its terms, and it is maintained by the same division of work:
+
+- The Curator, who alone sees the conversation, records a meaning settled in it and marks a real disagreement «disputed» with a link to the open agenda item rather than settling it by editing.
+- A correction that needs sources, or that changes an entry others stand on, goes to the author as a task: the entry is rewritten, the entries that depend on it are re-read and the questions are re-run. A thesaurus that is maintained by appending sentences at the point of each question returns to the state this procedure exists to prevent.
 
 ## Rubric for the reviewer
 
