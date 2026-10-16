@@ -20,10 +20,11 @@ import yaml
 
 
 IDENTIFIER = r"[A-Za-z0-9_.:-]{1,100}"
+AUTHOR = r"[^`\r\n]{1,100}"
 MARKER = "<!-- message-roll:"
 RECORD = re.compile(
     rf"<!-- message-roll:message -->\n\n"
-    rf"## (?P<timestamp>[^\n]+) — (?P<sender>{IDENTIFIER})\n\n"
+    rf"## (?P<timestamp>[^\n]+) — (?P<sender>{AUTHOR})\n\n"
     rf"\*\*Message:\*\* `(?P<message_id>{IDENTIFIER})`\n\n"
     r"(?P<body>.*?)\n\n<!-- message-roll:end -->\n\n", re.DOTALL,
 )
@@ -51,39 +52,70 @@ def identifier(value, label):
         raise ValueError(f"{label} must use 1–100 letters, digits, underscores, dots, colons or hyphens.")
 
 
-def metadata_from(text):
+def name_value(value, label):
+    if (not isinstance(value, str) or not re.fullmatch(AUTHOR, value)
+            or value != value.strip() or not value or MARKER in value
+            or any(ord(c) < 32 or ord(c) == 127 for c in value)):
+        raise ValueError(f"{label} must be a nonempty single-line name (at most 100 characters, no backticks).")
+
+
+def mapping_from(text):
     meta = yaml.load(text, Loader=UniqueKeyLoader)
     if not isinstance(meta, dict):
         raise ValueError("Metadata must be a YAML mapping.")
+    return meta
+
+
+def metadata_from(text, *, require_sessions=False):
+    meta = mapping_from(text)
     identifier(meta.get("roll-type"), "roll-type")
+    if "coordinator" in meta or "tmux_session" in meta:
+        raise ValueError("Legacy MessageRoll frontmatter (coordinator, tmux_session) is not supported; convert the roll before use.")
+    if "tmux-session" in meta:
+        identifier(meta["tmux-session"], "tmux-session")
     participants = meta.get("participants")
     if not isinstance(participants, list) or not participants:
         raise ValueError("participants must be a nonempty list.")
-    names = set()
+    names, sessions = set(), set()
     for participant in participants:
         if not isinstance(participant, dict):
             raise ValueError("Each participant must be a mapping.")
         name = participant.get("name")
-        identifier(name, "Participant name")
+        name_value(name, "Participant name")
         if name in names:
             raise ValueError("Participant names must be unique within the roll.")
         names.add(name)
-        for field in ("client", "model", "effort", "session_id"):
+        for field in ("client", "model", "effort", "session_id", "role"):
             if field in participant and (not isinstance(participant[field], str) or not participant[field].strip()):
                 raise ValueError(f"Participant {field} must be a nonempty string when supplied.")
-    coordinator = meta.get("coordinator")
-    if not isinstance(coordinator, dict):
-        raise ValueError("coordinator must be a mapping.")
-    identifier(coordinator.get("name"), "coordinator.name")
-    if coordinator.get("name") not in names:
-        raise ValueError("coordinator.name must identify a retained participant.")
-    identifier(coordinator.get("client"), "coordinator.client")
-    if not isinstance(coordinator.get("session_id"), str) or not coordinator["session_id"].strip():
-        raise ValueError("coordinator.session_id must be a nonempty string.")
-    speaker = next(p for p in participants if p["name"] == coordinator["name"])
-    if speaker.get("client") != coordinator["client"]:
-        raise ValueError("Coordinator client must match its participant entry.")
+        identifier(participant.get("client"), "Participant client")
+        name_value(participant.get("role"), "Participant role")
+        if "tmux" in participant:
+            raise ValueError("Use tmux-session on the roll and tmux-window on the participant.")
+        if "tmux-window" in participant:
+            identifier(participant["tmux-window"], "tmux-window")
+            if "tmux-session" not in meta:
+                raise ValueError("A tmux-window requires the roll's tmux-session.")
+        if participant["client"] == "human":
+            if "session_id" in participant:
+                raise ValueError("Human participants must not have session_id.")
+        else:
+            session = participant.get("session_id")
+            if session is None and not require_sessions:
+                continue  # Retained historical entries may lack a recoverable session ID.
+            if not isinstance(session, str) or not session.strip():
+                raise ValueError(f"Participant {name!r} requires a verified session_id.")
+            if session != session.strip() or any(c in session for c in "\r\n"):
+                raise ValueError("session_id must be an unpadded single-line string.")
+            if session in sessions:
+                raise ValueError("Participant session_id values must be unique within the roll.")
+            sessions.add(session)
     return meta
+
+
+def current_coordinator(meta):
+    """Routing is a helper concern, not a rule each participant must apply."""
+    return next((p for p in reversed(meta["participants"]) if p["role"] == "Curator"), None)
 
 
 def validate_body(body):
@@ -124,7 +156,8 @@ def parse_roll(content):
 
 
 def render_metadata(meta):
-    return "---\n" + yaml.safe_dump(meta, allow_unicode=True, sort_keys=False) + "---\n"
+    # One line per value: YAML folding would put hard line breaks inside a value.
+    return "---\n" + yaml.safe_dump(meta, allow_unicode=True, sort_keys=False, width=1_000_000) + "---\n"
 
 
 def render_message(sender, message_id, body):
@@ -167,34 +200,62 @@ def replace_durably(path, content):
             os.unlink(temporary)
 
 
+def read_roll(path):
+    """Read and validate the roll under the caller's lock."""
+    content = path.read_text(encoding="utf-8")
+    return content, *parse_roll(content)
+
+
 def initialize(path, metadata_text):
-    meta = metadata_from(metadata_text)
+    meta = metadata_from(metadata_text, require_sessions=True)
     with locked(path):
         if path.exists():
             raise ValueError("Roll already exists; init never overwrites it.")
         replace_durably(path, render_metadata(meta) + "\n")
 
 
+def validate_new_participant(meta, participant):
+    # Creation is strict; only retained entries may lack historical session IDs.
+    metadata_from(yaml.safe_dump({**meta, "participants": [participant]}), require_sessions=True)
+
+
 def change_metadata(path, metadata_text):
     proposed = metadata_from(metadata_text)
     with locked(path):
-        current, _, history = parse_roll(path.read_text(encoding="utf-8"))
+        _, current, _, history = read_roll(path)
         if proposed["roll-type"] != current["roll-type"]:
             raise ValueError("An existing roll cannot change roll-type.")
-        retained = {p["name"]: p for p in proposed["participants"]}
-        for participant in current["participants"]:
-            if retained.get(participant["name"]) != participant:
-                raise ValueError("Retain existing participants unchanged; add a new name for a replacement.")
+        if proposed["participants"][:len(current["participants"])] != current["participants"]:
+            raise ValueError("Retain existing participants unchanged and in order; append new participants only.")
+        if current.get("tmux-session") != proposed.get("tmux-session") and "tmux-session" in current:
+            raise ValueError("An existing tmux-session cannot change while participant addresses are retained.")
+        for participant in proposed["participants"][len(current["participants"]):]:
+            validate_new_participant(proposed, participant)
         replace_durably(path, render_metadata(proposed) + history)
 
 
+def register(path, participant_text):
+    participant = mapping_from(participant_text)
+    with locked(path):
+        _, meta, _, history = read_roll(path)
+        validate_new_participant(meta, participant)
+        previous = next((p for p in meta["participants"] if p["name"] == participant["name"]), None)
+        if previous is not None:
+            if previous != participant:
+                raise ValueError("Participant name already exists with different metadata; entries are immutable.")
+            return "already registered"
+        meta["participants"].append(participant)
+        metadata_from(yaml.safe_dump(meta))  # Reject reuse of another participant's session.
+        replace_durably(path, render_metadata(meta) + history)
+        return "registered"
+
+
 def append(path, sender, message_id, body):
-    identifier(sender, "sender")
+    name_value(sender, "sender")
     identifier(message_id, "message-id")
     validate_body(body)
     with locked(path):
-        content = path.read_text(encoding="utf-8")
-        meta, records, _ = parse_roll(content)
+        content, meta, records, _ = read_roll(path)
         if sender not in {p["name"] for p in meta["participants"]}:
             raise ValueError("Register the sender in participants before appending.")
         previous = next((r for r in records if r["message_id"] == message_id), None)
@@ -207,13 +268,17 @@ def append(path, sender, message_id, body):
 
 
 def notify(meta, sender, message_id, roll_ref, codex, timeout):
-    coordinator = meta["coordinator"]
+    coordinator = current_coordinator(meta)
+    if coordinator is None:
+        return "no curator; message saved without notification"
     if sender == coordinator["name"]:
         return "coordinator message; no self-notification"
     if coordinator["client"] == "claude":
         return "available to Claude watch; delivery requires an active Monitor"
     if coordinator["client"] != "codex":
         raise ValueError(f"No notification adapter for client {coordinator['client']!r}; arrange and verify one explicitly.")
+    if not coordinator.get("session_id"):
+        raise ValueError("Current curator has no recoverable session_id; register a new verified curator session.")
     if codex is None:
         raise ValueError("codex is missing; on macOS with Homebrew run: brew install --cask codex. On other platforms use the official Codex installation instructions.")
     result = subprocess.run(
@@ -235,7 +300,7 @@ def watch(path, after, once, poll_seconds, health_seconds):
     next_health = time.monotonic() + health_seconds
     while True:
         with locked(path):
-            meta, records, _ = parse_roll(path.read_text(encoding="utf-8"))
+            _, meta, records, _ = read_roll(path)
         if not initialized:
             if after:
                 ids = [r["message_id"] for r in records]
@@ -244,18 +309,21 @@ def watch(path, after, once, poll_seconds, health_seconds):
                 seen.update(ids[:ids.index(after) + 1])
             print("message-roll:ready", flush=True)
             initialized = True
-        elif meta != previous_meta:
+        elif meta != previous_meta and current_coordinator(meta) is not None:
             print("message-roll:metadata changed; reconcile participants and coordinator", flush=True)
         for record in records:
             if record["message_id"] not in seen:
-                seen.add(record["message_id"])
-                if record["sender"] != meta["coordinator"]["name"]:
+                coordinator = current_coordinator(meta)
+                if coordinator is not None:
+                    seen.add(record["message_id"])
+                if coordinator is not None and record["sender"] != coordinator["name"]:
                     print(f"message-roll:message {record['message_id']} by {record['sender']}", flush=True)
         previous_meta = meta
         if once:
             return
         if time.monotonic() >= next_health:
-            print("message-roll:health-check inspect sessions, jobs and missed messages", flush=True)
+            if current_coordinator(meta) is not None:
+                print("message-roll:health-check inspect sessions, jobs and missed messages", flush=True)
             next_health = time.monotonic() + health_seconds
         time.sleep(poll_seconds)
 
@@ -277,11 +345,13 @@ def positive_seconds(value):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("init", "metadata", "append", "watch"):
+    for name in ("init", "metadata", "append", "watch", "register"):
         command = commands.add_parser(name)
         command.add_argument("--roll", type=absolute_path, required=True)
         if name in ("init", "metadata"):
             command.add_argument("--metadata", type=absolute_path, required=True, help="Complete proposed frontmatter as YAML, without --- delimiters")
+        elif name == "register":
+            command.add_argument("--participant", type=absolute_path, required=True, help="One new participant as YAML")
         elif name == "append":
             command.add_argument("--message-id", required=True)
             command.add_argument("--sender", required=True)
@@ -301,6 +371,8 @@ def main():
             initialize(args.roll, args.metadata.read_text(encoding="utf-8"))
         elif args.command == "metadata":
             change_metadata(args.roll, args.metadata.read_text(encoding="utf-8"))
+        elif args.command == "register":
+            print(register(args.roll, args.participant.read_text(encoding="utf-8")))
         elif args.command == "watch":
             watch(args.roll, args.after, args.once, args.poll_seconds, args.health_seconds)
         else:

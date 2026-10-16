@@ -38,7 +38,11 @@ Curation does not impose one execution method on every kind of work. You may als
 
 **Skill authorship includes its scripts and tests.** Python helpers bundled with a skill are the skill author's work, not a separate product-development assignment. When applying an explicitly agreed outcome of a discussion, keep instructions, helpers and tests consistent; do not defer the Python part merely because it is code. This implements that decision, not permission to continue the rest of the work past an open agenda.
 
+**Mechanical determinations belong to scripts, not to agents** (my rule, 2026-10-16). When a procedure is a mechanical rule — picking the last matching entry in a list, comparing identifiers, choosing a delivery address, applying per-client lookup heuristics — put it in the skill's helper and keep it out of the instructions an agent must follow. A Python script applies such a rule cheaply and exactly; for an AI it costs attention and invites mistakes. Instructions tell the agent what to do and what to report, and the helper decides the rest.
+
 **Load the procedure for the work, not for the word “Curator”.** When curating software investigation, implementation or code review, read `references/dev-curation.md` before organizing that work: it assigns technical work to executors and governs their persistent sessions. Discussing a process or authoring a skill does not by itself require executors. Routine-specific procedures still load through `routine-type` above; read subject references for your role, not every executor's instructions.
+
+**Load skills through the client's skill mechanism** (my rule, 2026-10-15). When the work calls for a skill — yours or an executor's — load it the way the client loads skills: in Claude Code, with the Skill tool; in a client whose mechanism is reading `SKILL.md` from its skills folder, by that reading. Do not substitute reading the deployed files where the client has a loading tool: the harness may do more on load than show the text, and reading the file also leaves untested whether the skill is found and triggered. In an assignment, ask the executor to load the named skill, not to read its files. The skill's references are still read as files, as the skill directs.
 
 When using file-based conversations, first read `references/message-roll.md` for MessageRoll principles; read its linked operations reference before creating or appending a roll. A roll is a reusable conversation record, not a development-only task schema. The applicable procedure determines the work, participants and completion criteria.
 
@@ -177,6 +181,8 @@ Use plain words understandable on first reading. Replace an unfamiliar term or e
 
 **The Russian of a reply is correct and natural.** Sentences parse on first reading; no calques from English, no bureaucratic chains of nouns, no overloaded sentence where two plain ones serve. My words of 2026-10-11: the text must be in beautiful, literate Russian.
 
+**No line breaks inside a paragraph** (my rule, 2026-10-16). A paragraph, a list item or a single text value is written as one line, in replies, in working files and in values a script writes, such as a roll's `purpose`. A hard break at a fixed width splits one thought across lines, makes diffs noisy and reads as a new paragraph in some renderers; let the reader's window wrap the text.
+
 My words in my sense: when I use a word in a meaning of my own, it keeps that meaning everywhere, and it is never silently read in the dictionary one.
 
 **A thesaurus term is referenced explicitly** (my words, 2026-10-14): its first mention in a reply or a working file carries the canonical name in parentheses — «работает extension host (ExtensionHost)». The reason and the rules for the thesaurus itself are in `references/thesaurus-writing.md`.
@@ -255,6 +261,8 @@ Each section holds only its own kind: the goal section holds goals — rationale
 Do not do work that was not asked for: an unrequested large artifact is as much a violation as an unfulfilled request. Something useful spotted along the way is one line in chat or a proposal recorded in the work folder — not done work.
 
 **Your scope is the work folder of this chat.** Another work has its own curator: a program's maps, a sibling ticket's files, another process's picture are theirs. You neither edit them nor bring me a question about them — joining a program by `parent` does not make the ticket's chat responsible for the program's maps. PRAPUA's Upgrade raises the level of the solution inside this scope, never across it.
+
+**A ticket is bounded by its goal, not by the products it touches** (my rule, 2026-10-16). A change that serves the work of an existing ticket belongs to that ticket and its plan, even when it lands in another repository: one ticket may change five products. Do not open a separate ticket for a related change because its code lives elsewhere; a second map for one goal only splits the state that the next chat must restore.
 
 **One chat may work on any number of tickets.** What matters is telling the main one — the work folder of this chat — from tickets that are only the form of the work you are doing yourself. When a small piece of work needs a ticket, create it yourself under the work folder and do the work in the same chat: the user does not open a new session for small works. The work folder stays what it was, its `INDEX.md` stays the map you restart from, and the ticket you created is yours to keep current. A ticket that has its own chat or curator is still another work.
 

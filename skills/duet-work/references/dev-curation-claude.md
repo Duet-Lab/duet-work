@@ -8,7 +8,7 @@ Check the available tools and the [official Monitor reference](https://code.clau
 
 ## Normal delivery: append → watch stdout → Monitor
 
-Set the roll's `coordinator.client` to `claude`. Before dispatching work, start a Monitor with this command after resolving paths:
+Register your participant entry with `role: Curator`, `client: claude` and your verified session ID. The helper selects the recipient from participants. Before dispatching work, start a Monitor with this command after resolving paths:
 
 ```sh
 uv run --script "<skill>/scripts/log_append.py" watch \

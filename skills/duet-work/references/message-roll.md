@@ -1,6 +1,6 @@
 # MessageRoll principles
 
-Read this when organizing or joining a shared conversation through files. A **MessageRoll**, or roll, is a Markdown record of messages for a particular purpose, with named participants and a moderator. It preserves the exchange across clients and sessions; it is not itself a task, a phase or a running agent.
+Read this when organizing or joining a shared conversation through files. A **MessageRoll**, or roll, is a Markdown record of messages for a particular purpose, with named participants and, when needed, a curator. It preserves the exchange across clients and sessions; it is not itself a task, a phase or a running agent.
 
 ## Purpose and participants
 
@@ -10,7 +10,7 @@ The user sets intent and authority. The moderator connects participants and medi
 
 Clarify ambiguous user wording with the user before handing it to participants. Give them the distilled request, using canonical terms from the shared thesaurus where short forms could mislead, rather than forwarding the whole clarification exchange. This protects their working context without concealing relevant reasoning, constraints or remaining uncertainty. Do not turn a tentative statement into a decision or a clarified goal into instructions for how an engineer must solve it.
 
-Use stable, informative participant names so authorship is understandable: for example `Developer_Gemini_1` or `Reviewer_Codex_Security_1`. Keep everyone who contributed, including disconnected participants. A replacement gets a new name; an interruption must not erase or reassign earlier contributions. The current moderator address can change without rewriting the conversation.
+Use stable, informative participant names so authorship is understandable: for example `Developer_Gemini_1` or `Reviewer_Codex_Security_1`. Keep everyone who contributed, including disconnected participants. A replacement gets a new name; an interruption must not erase or reassign earlier contributions. Each participant has an explicit role and client. An AI entry identifies one session; resuming it keeps the entry, while a new session gets a new name. Retained entries and their order are immutable.
 
 ## Messages and artifacts
 
@@ -22,7 +22,7 @@ Participants read relevant artifacts directly. The moderator need not collect or
 
 ## Moderator updates
 
-The coordinator and moderator are the same role. Maintain the shared context of the conversation, including its agenda and the ticket's thesaurus. Extract terms from the user's requests and all participants' contributions, and refine them through discussion; do not wait for someone to request glossary maintenance. Preserve the distinction between established meanings and unresolved disputes.
+The Curator moderates the work’s shared conversation. Maintain its shared context, including its agenda and the ticket's thesaurus. Extract terms from the user's requests and all participants' contributions, and refine them through discussion; do not wait for someone to request glossary maintenance. Preserve the distinction between established meanings and unresolved disputes.
 
 When shared context changes, inform all participants through an ordinary moderator message: say what changed, what it means for the discussion or work, and link the current source. Group related changes into a useful update rather than announcing every edit. Across rolls, reference the same authoritative agenda or thesaurus instead of making local copies. No special message type or metadata field is needed.
 
@@ -36,6 +36,6 @@ After an interruption, reconcile the retained messages, current moderator and ac
 
 ## Format and operation
 
-Frontmatter identifies `roll-type`, the current `coordinator`, and `participants`. The moderator is stored as `coordinator`; development curation calls that participant the Curator. Messages retain authorship, timestamps and IDs. Keep this record useful independently of a particular workflow: phases, code-review rules and client-specific automation should not become mandatory message semantics.
+Frontmatter identifies `roll-type` and ordered `participants`; the moderator has `role: Curator`, with its client and session ID in that same entry. The helper selects the notification recipient, not the agents. A roll without a curator still saves messages, but does not notify anyone. Messages retain authorship, timestamps and IDs. Keep this record useful independently of a particular workflow: phases, code-review rules and client-specific automation should not become mandatory message semantics.
 
 Before creating, changing metadata or appending, read [MessageRoll operations](message-roll-operations.md). It specifies the current schema, helpers and concurrency/delivery limits. For software work, [Development curation](dev-curation.md) applies these principles to engineers, phases and review; it does not redefine the roll.

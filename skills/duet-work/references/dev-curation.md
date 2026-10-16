@@ -42,7 +42,7 @@ Proceed to implementation when the design has been reviewed, material blockers a
 
 ## Start executors only when needed
 
-Do not provision a team while merely designing a process. When a concrete assignment requires an executor, ask the user to open a VS Code terminal in an editor tab, run `tmux`, and say “ready”. Reuse an already identified suitable tmux session; do not take over an unrelated terminal. If tmux or another required tool is missing, give its verified installation command and stop until it is available.
+Do not provision a team while merely designing a process. When a concrete assignment requires an executor, ask the user to open a VS Code terminal in an editor tab, run `tmux new -s <ticket>` with the ticket number in lowercase (for example `tmux new -s due043`), and say “ready”. The name ties the session to its work in `tmux ls`. If the user started `tmux` without a name for this work, rename that session yourself with `tmux rename-session`; never rename a session that belongs to other work. Reuse an already identified suitable tmux session; do not take over an unrelated terminal. If tmux or another required tool is missing, give its verified installation command and stop until it is available.
 
 Start with the executor the current assignment needs: usually the developer, or an investigator when a discussion first needs technical evidence. Add reviewers when the subject skill and task call for them; the subject/business review bar determines the panel, not this procedure. Use full, persistent client sessions in tmux windows, not the Curator's built-in subagents. Reuse suitable approved sessions; do not create an idle fleet.
 
@@ -68,7 +68,9 @@ Use the client's verified Full Access launch mode and verify the effective model
 
 ### Session identity
 
-Keep the participant roster in each MessageRoll's frontmatter, including disconnected participants; do not maintain a competing roster in `INDEX.md` or a separate coordination file. Keep the current coordinator client/session there too. Preserve verified launch and observation details in the work's current state reachable from `INDEX.md`, referring to roll participant names rather than duplicating their identities. Omit credentials and tokens; use the existing work map or a linked operational note; this does not require another roster or mandatory roll fields.
+Keep the participant roster in each MessageRoll's frontmatter, including disconnected participants; do not maintain a competing roster in `INDEX.md` or a separate coordination file. Every participant entry carries its explicit role and client; AI entries also carry their verified session ID. Use the human name from Duet orientation with `client: human`. Record the shared `tmux-session` on the roll and each executor’s `tmux-window` on its participant entry. Preserve verified launch and observation details in the work's current state reachable from `INDEX.md`, referring to roll participant names rather than duplicating their identities. Omit credentials and tokens; use the existing work map or a linked operational note; this does not require another roster or mandatory roll fields.
+
+Name the executor and its role in the assignment; the executor first discovers its own session ID and registers itself through the helper’s `register` command before appending a reply. Do not pre-register an AI entry with an unknown ID. The Curator likewise registers its own verified identity. A resumed session keeps its entry unchanged; a new session gets a new name and is appended to the roster. Never reorder old participants or update an old entry to impersonate a replacement.
 
 A restarted Curator first reconciles roll participants and saved operational state with tmux, the latest task/results and roll messages. Do not launch duplicates because the chat forgot a session. An idle terminal is not proof of task completion; a surviving tmux pane is not proof of an intact model session. If resumption is impossible, record the interruption and get a model/effort choice for a replacement session.
 
@@ -84,7 +86,7 @@ Publish the brief request in the phase's roll or link a separate assignment file
 
 Do not require a formal acknowledgement for every message. A substantive reply clearly addressing the request already establishes that the participant received it; silence and queue acceptance do not. When conditions of ongoing work materially change, explicitly reach the participant and establish that it understood the change. Editing a linked file alone neither invokes nor interrupts an agent.
 
-Duet's system instructions load automatically in properly configured sessions. Verify this rather than pasting them into assignments. The assignment selects the executor's role and subject skill; do not invoke `duet-work` for an executor as if it were another Curator of the ticket.
+Duet's system instructions load automatically in properly configured sessions. Verify this rather than pasting them into assignments. The assignment selects the executor's role, states the work bar with its source, and names every skill the work needs — the subject skill and the skills for the kind of artifact being changed, such as skill-creator for any skill edit — asking the executor to load them through its client's skill mechanism, not to read their files (SKILL.md, «Load skills through the client's skill mechanism»). Where the business requires the user's permission to load skills, the assignment carries it. Only the Curator sees the whole work, so an executor cannot know these on its own; check in its first report that it loaded them before relying on its result (Andrei's rule, 2026-10-16). Do not invoke `duet-work` for an executor as if it were another Curator of the ticket.
 
 A shared working tree has one product-code writer at a time. Reviewers write their own findings, not changes to the reviewed material. Name the exact review snapshot: a commit or saved diff plus untracked-file contents for code, and saved copies or hashes for design artifacts. Once handed over, reviewed files remain unchanged until all assigned reviewers finish; this is mandatory. Discussion may continue, but corrections wait. Never reset or discard user work to arrange a review.
 
@@ -94,7 +96,7 @@ A changed design or code snapshot requires reassessment of the affected conclusi
 
 Use [MessageRoll principles](message-roll.md) for the shared conversation and participant model, and [MessageRoll operations](message-roll-operations.md) for metadata, append and delivery. Create each roll for a clear purpose inside its phase; the phase may contain several rolls. Both analysis/design and implementation can use `roll-type: dev-curation`: the type names this procedure, not a phase or task state.
 
-Reuse the phase's existing roll when its purpose still fits. Separate a new discussion when it has its own focus or participants, not merely because another message arrived. Link relevant artifacts instead of copying them; an engineer can continue across phases without restarting their session. Record current coordinator and participant identities in the rolls, not a parallel registry.
+Reuse the phase's existing roll when its purpose still fits. Separate a new discussion when it has its own focus or participants, not merely because another message arrived. Link relevant artifacts instead of copying them; an engineer can continue across phases without restarting their session. Record participant identities in the rolls, not a parallel registry or a separate coordinator block.
 
 ### Dispatch and reports
 
@@ -112,7 +114,7 @@ Before dispatching work, establish what invokes the Curator again: a scheduled p
 
 The observation targets are the active rolls and their known participant sessions, not the code diff. A notification is a hint to inspect durable state, not a verdict or an instruction with user authority. Re-read complete messages and their linked artifacts; a file-change event, quiet terminal, process exit or elapsed time alone proves neither delivery nor success.
 
-Before dispatch, confirm that the roll still names this coordinator session. An old queued notice may arrive after ownership changed; in that case stop acting as coordinator for that roll and reconcile the handoff instead of overwriting the new address to reclaim it.
+The helper determines notification routing from participant metadata. A handoff adds the replacement’s verified participant entry and transfers the saved work and observation state; do not edit historical session addresses or run a separate “does this roll still point to me?” check.
 
 **Normal progress is event-driven; the health check runs every five minutes.** An executor saves its result and appends a roll reference through the common operation. The notification route is selected by coordinator client: the helper calls `codex queue` for a reachable Codex session, or the append is observed by Claude's Monitor. Real-session delivery must be verified before relying on it. Do not delay normal handoffs until the next health check. The five-minute check is insurance for silent failure, missed delivery, blocked prompts and expired observation. Client scheduling may delay a check while a turn is busy, so this is a cadence, not a hard response-time guarantee.
 

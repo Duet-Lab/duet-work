@@ -8,7 +8,7 @@ Inspect the installed `codex queue --help` and the [official command reference](
 
 ## Normal delivery: append saves, then invokes queue
 
-Set `coordinator.client: codex` and the current session ID in the roll. The common `append` command saves the message and then invokes:
+Register your participant entry with `role: Curator`, `client: codex` and your verified session ID. The helper selects the recipient from participants. The common `append` command saves the message and then invokes:
 
 ```sh
 codex queue --thread "<current-coordinator-session-id>" \
@@ -19,7 +19,7 @@ This is the helper's underlying command, not a mandatory second executor action.
 
 If queue is missing, exits unsuccessfully or times out, the message remains saved and append exits 3 with an explicit delivery problem. Resolve the problem and repeat the identical append command; its message ID prevents another file entry, but the queue notice may repeat. The curator deduplicates handling by roll/message ID and reads durable state rather than treating notification text as a new user instruction.
 
-Moderator-authored messages do not queue back to the same moderator. A resumed coordinator gets its current address through the `metadata` operation. In-flight delivery might still reach the former address; the next health check or identical retry reconciles the durable message. Queue acceptance is not proof that the curator completed a turn.
+Moderator-authored messages do not queue back to the same moderator. A resumed session retains its immutable participant entry; a new curator session registers a new name and entry. In-flight delivery might still reach the former address; the next health check or identical retry reconciles the durable message. Queue acceptance is not proof that the curator completed a turn.
 
 ## Establish reachability before dispatch
 
