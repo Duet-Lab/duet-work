@@ -30,6 +30,7 @@ class RollTests(unittest.TestCase):
         self.root = Path(directory.name)
         self.roll = self.root / "discussion.md"
         self.body = self.root / "body.md"
+        # Non-ASCII on purpose: the roll must round-trip UTF-8 bodies byte for byte.
         self.body.write_text("## Результат\n\nМнение и `@ABC001/report.md`.\n```python\nprint('да')\n```\n", encoding="utf-8")
         self.environment = dict(os.environ)
         self.environment.update(PATH=str(self.root), ROLL=str(self.roll), CAPTURE=str(self.root / "queue.json"))
@@ -37,9 +38,9 @@ class RollTests(unittest.TestCase):
         self.codex.write_text(
             f"#!{sys.executable}\n"
             "import json, os, pathlib, sys\n"
-            "roll = pathlib.Path(os.environ['ROLL']).read_text()\n"
+            "roll = pathlib.Path(os.environ['ROLL']).read_text(encoding='utf-8')\n"
             "assert '<!-- message-roll:end -->' in roll, 'notification preceded durable message'\n"
-            "pathlib.Path(os.environ['CAPTURE']).write_text(json.dumps(sys.argv[1:]))\n"
+            "pathlib.Path(os.environ['CAPTURE']).write_text(json.dumps(sys.argv[1:]), encoding='utf-8')\n"
             "sys.exit(int(os.environ.get('QUEUE_EXIT', '0')))\n", encoding="utf-8")
         self.codex.chmod(0o700)
 
@@ -47,9 +48,9 @@ class RollTests(unittest.TestCase):
         return {
             "roll-type": "dev-curation",
             "participants": [
-                {"name": "Moderator_1", "client": client, "role": "Curator", "session_id": "session-one"},
+                {"name": "Curator_1", "client": client, "role": "Curator", "session_id": "session-one"},
                 {"name": "Developer_Gemini_1", "client": "gemini", "role": "Developer", "session_id": "developer-one", "model": "test-model", "effort": "test-effort"},
-                {"name": "User", "client": "human", "role": "User"},
+                {"name": "Alex", "client": "human", "role": "User"},
             ],
         }
 
@@ -72,14 +73,32 @@ class RollTests(unittest.TestCase):
         return self.command("append", "--message-id", message_id, "--sender", sender,
                             "--body", str(self.body), "--roll-ref", "@ABC001/rolls/discussion.md", **options)
 
+    def register(self, participant, **options):
+        return self.command("register", "--participant", str(self.save_metadata_input(participant, "participant.yaml")), **options)
+
+    def legacy(self):
+        meta = self.metadata()
+        meta["coordinator"] = {"name": "Curator_1", "client": "claude", "session_id": "session-one"}
+        for p in meta["participants"]:
+            p.pop("role")
+            p.pop("session_id", None)
+        meta["participants"][-1].pop("client")
+        meta["tmux_session"] = "abc001"
+        meta["participants"][1]["tmux"] = "2:developer"
+        self.roll.write_text("---\n" + yaml.safe_dump(meta, sort_keys=False) + "---\n\n", encoding="utf-8")
+        return meta
+
+    def read_metadata(self):
+        return yaml.safe_load(self.roll.read_text(encoding="utf-8").split("---\n")[1])
+
     def test_append_preserves_readable_markdown_without_development_fields(self):
         meta = self.metadata()
         meta["roll-type"] = "round-table"
         self.initialize(meta)
         result = self.send()
         self.assertEqual(result.returncode, 0, result.stderr)
-        content = self.roll.read_text()
-        self.assertIn(self.body.read_text(), content)
+        content = self.roll.read_text(encoding="utf-8")
+        self.assertIn(self.body.read_text(encoding="utf-8"), content)
         self.assertIn(" — Developer_Gemini_1\n", content)
         self.assertNotIn("**Task:**", content)
 
@@ -105,7 +124,7 @@ class RollTests(unittest.TestCase):
 
     def test_duplicate_yaml_keys_are_rejected(self):
         path = self.save_metadata_input(self.metadata())
-        path.write_text(path.read_text() + "roll-type: surprise\n")
+        path.write_text(path.read_text(encoding="utf-8") + "roll-type: surprise\n", encoding="utf-8")
         result = self.command("init", "--metadata", str(path))
         self.assertEqual(result.returncode, 1)
         self.assertFalse(self.roll.exists())
@@ -122,7 +141,7 @@ class RollTests(unittest.TestCase):
         meta["coordinator"] = {"name": ["not-a-name"]}
         result = self.command("init", "--metadata", str(self.save_metadata_input(meta)))
         self.assertEqual(result.returncode, 1)
-        self.assertIn("Legacy", result.stderr)
+        self.assertIn("older frontmatter format", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
     def test_identical_retry_preserves_file_bytes(self):
@@ -137,7 +156,7 @@ class RollTests(unittest.TestCase):
         self.initialize()
         self.send()
         before = self.roll.read_bytes()
-        self.body.write_text("Изменённый ответ")
+        self.body.write_text("Changed reply", encoding="utf-8")
         result = self.send()
         self.assertEqual(result.returncode, 1)
         self.assertIn("different content", result.stderr)
@@ -152,16 +171,16 @@ class RollTests(unittest.TestCase):
 
     def test_user_can_author_a_message(self):
         self.initialize()
-        result = self.send(sender="User")
+        result = self.send(sender="Alex")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(" — User\n", self.roll.read_text())
+        self.assertIn(" — Alex\n", self.roll.read_text(encoding="utf-8"))
 
     def test_invalid_message_body_is_rejected(self):
         self.initialize()
         before = self.roll.read_bytes()
         for body in ("  \n", "<!-- message-roll:end -->"):
             with self.subTest(body=body):
-                self.body.write_text(body)
+                self.body.write_text(body, encoding="utf-8")
                 self.assertEqual(self.send().returncode, 1)
                 self.assertEqual(self.roll.read_bytes(), before)
 
@@ -179,7 +198,7 @@ class RollTests(unittest.TestCase):
         self.initialize()
         self.send("m1")
         self.send("m2")
-        self.roll.write_text(self.roll.read_text().replace("<!-- message-roll:end -->", "", 1))
+        self.roll.write_text(self.roll.read_text(encoding="utf-8").replace("<!-- message-roll:end -->", "", 1), encoding="utf-8")
         before = self.roll.read_bytes()
         self.assertEqual(self.send("m3").returncode, 1)
         self.assertEqual(self.roll.read_bytes(), before)
@@ -187,14 +206,14 @@ class RollTests(unittest.TestCase):
     def test_metadata_update_preserves_published_messages_exactly(self):
         self.initialize()
         self.send()
-        history = self.roll.read_text().split("\n---\n", 1)[1]
+        history = self.roll.read_text(encoding="utf-8").split("\n---\n", 1)[1]
         meta = self.metadata()
-        meta["participants"].append({"name": "Moderator_2", "client": "codex", "role": "Curator", "session_id": "session-two"})
+        meta["participants"].append({"name": "Curator_2", "client": "codex", "role": "Curator", "session_id": "session-two"})
         meta["participants"].append({"name": "Reviewer_Codex_Security_1", "client": "codex", "role": "Reviewer", "session_id": "reviewer-one"})
         result = self.command("metadata", "--metadata", str(self.save_metadata_input(meta)))
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.roll.read_text().split("\n---\n", 1)[1], history)
-        self.assertIn("session-one", self.roll.read_text())
+        self.assertEqual(self.roll.read_text(encoding="utf-8").split("\n---\n", 1)[1], history)
+        self.assertIn("session-one", self.roll.read_text(encoding="utf-8"))
         self.assertEqual(self.send("m2", sender="Reviewer_Codex_Security_1").returncode, 0)
 
     def test_metadata_refuses_to_remove_disconnected_participant(self):
@@ -226,7 +245,7 @@ class RollTests(unittest.TestCase):
             results = [f.result() for f in futures]
         for result in results:
             self.assertEqual(result.returncode, 0, result.stderr)
-        content = self.roll.read_text()
+        content = self.roll.read_text(encoding="utf-8")
         self.assertEqual(content.count("<!-- message-roll:end -->"), 16)
         self.assertIn("Developer_Gemini_2", content)
         for i in range(16):
@@ -235,11 +254,11 @@ class RollTests(unittest.TestCase):
     def test_codex_notification_uses_current_session_after_message_is_saved(self):
         self.initialize(self.metadata("codex"))
         meta = self.metadata("codex")
-        meta["participants"].append({"name": "Moderator_2", "client": "codex", "role": "Curator", "session_id": "session-two"})
+        meta["participants"].append({"name": "Curator_2", "client": "codex", "role": "Curator", "session_id": "session-two"})
         self.command("metadata", "--metadata", str(self.save_metadata_input(meta)))
         result = self.send()
         self.assertEqual(result.returncode, 0, result.stderr)
-        args = json.loads((self.root / "queue.json").read_text())
+        args = json.loads((self.root / "queue.json").read_text(encoding="utf-8"))
         self.assertEqual(args[:3], ["queue", "--thread", "session-two"])
         self.assertIn("@ABC001/rolls/discussion.md", args[4])
         self.assertIn("`m1`", args[4])
@@ -262,32 +281,32 @@ class RollTests(unittest.TestCase):
         result = self.send()
         self.assertEqual(result.returncode, 3)
         self.assertIn("brew install --cask codex", result.stderr)
-        self.assertIn("**Message:** `m1`", self.roll.read_text())
+        self.assertIn("**Message:** `m1`", self.roll.read_text(encoding="utf-8"))
 
     def test_queue_timeout_preserves_the_saved_message(self):
         self.initialize(self.metadata("codex"))
-        self.codex.write_text(f"#!{sys.executable}\nwhile True: pass\n")
+        self.codex.write_text(f"#!{sys.executable}\nwhile True: pass\n", encoding="utf-8")
         result = self.command("append", "--message-id", "m1", "--sender", "Developer_Gemini_1",
                               "--body", str(self.body), "--roll-ref", "@ABC001/rolls/discussion.md",
                               "--notify-timeout", "0.2")
         self.assertEqual(result.returncode, 3)
         self.assertIn("timed out", result.stderr)
-        self.assertIn("**Message:** `m1`", self.roll.read_text())
+        self.assertIn("**Message:** `m1`", self.roll.read_text(encoding="utf-8"))
 
     def test_retry_after_coordinator_replacement_uses_new_address(self):
         self.initialize(self.metadata("codex"))
         self.send(environment=dict(self.environment, QUEUE_EXIT="7"))
         meta = self.metadata("codex")
-        meta["participants"].append({"name": "Moderator_2", "client": "codex", "role": "Curator", "session_id": "session-two"})
+        meta["participants"].append({"name": "Curator_2", "client": "codex", "role": "Curator", "session_id": "session-two"})
         self.command("metadata", "--metadata", str(self.save_metadata_input(meta)))
         self.assertEqual(self.send().returncode, 0)
-        args = json.loads((self.root / "queue.json").read_text())
+        args = json.loads((self.root / "queue.json").read_text(encoding="utf-8"))
         self.assertEqual(args[:3], ["queue", "--thread", "session-two"])
-        self.assertEqual(self.roll.read_text().count("**Message:** `m1`"), 1)
+        self.assertEqual(self.roll.read_text(encoding="utf-8").count("**Message:** `m1`"), 1)
 
     def test_coordinator_does_not_notify_itself(self):
         self.initialize(self.metadata("codex"))
-        result = self.send(sender="Moderator_1")
+        result = self.send(sender="Curator_1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.root / "queue.json").exists())
 
@@ -296,7 +315,7 @@ class RollTests(unittest.TestCase):
         result = self.send()
         self.assertEqual(result.returncode, 3)
         self.assertIn("No notification adapter", result.stderr)
-        self.assertIn("**Message:** `m1`", self.roll.read_text())
+        self.assertIn("**Message:** `m1`", self.roll.read_text(encoding="utf-8"))
 
     def test_watch_once_emits_only_messages_after_cursor(self):
         self.initialize()
@@ -315,7 +334,7 @@ class RollTests(unittest.TestCase):
 
     def test_watch_does_not_echo_coordinator_messages(self):
         self.initialize()
-        self.send(sender="Moderator_1")
+        self.send(sender="Curator_1")
         result = self.command("watch", "--once")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("message-roll:message", result.stdout)
@@ -344,7 +363,7 @@ class RollTests(unittest.TestCase):
         self.initialize(roll=second)
         self.assertEqual(self.send().returncode, 0)
         self.assertEqual(self.send(roll=second).returncode, 0)
-        self.assertIn("**Message:** `m1`", second.read_text())
+        self.assertIn("**Message:** `m1`", second.read_text(encoding="utf-8"))
 
     def test_symlink_alias_preserves_the_same_roll(self):
         self.initialize()
@@ -353,34 +372,15 @@ class RollTests(unittest.TestCase):
         result = self.send(roll=alias)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(alias.is_symlink())
-        self.assertIn("**Message:** `m1`", self.roll.read_text())
+        self.assertIn("**Message:** `m1`", self.roll.read_text(encoding="utf-8"))
 
     def test_legacy_log_is_not_silently_reinterpreted(self):
-        self.roll.write_text("<!-- duet-channel:message -->\n")
+        self.roll.write_text("<!-- duet-channel:message -->\n", encoding="utf-8")
         before = self.roll.read_bytes()
         result = self.send()
         self.assertEqual(result.returncode, 1)
         self.assertIn("not migrated automatically", result.stderr)
         self.assertEqual(self.roll.read_bytes(), before)
-
-
-    def register(self, participant, **options):
-        return self.command("register", "--participant", str(self.save_metadata_input(participant, "participant.yaml")), **options)
-
-    def legacy(self):
-        meta = self.metadata()
-        meta["coordinator"] = {"name": "Moderator_1", "client": "claude", "session_id": "session-one"}
-        for p in meta["participants"]:
-            p.pop("role")
-            p.pop("session_id", None)
-        meta["participants"][-1].pop("client")
-        meta["tmux_session"] = "kim001"
-        meta["participants"][1]["tmux"] = "2:developer"
-        self.roll.write_text("---\n" + yaml.safe_dump(meta, sort_keys=False) + "---\n\n")
-        return meta
-
-    def read_metadata(self):
-        return yaml.safe_load(self.roll.read_text().split("---\n")[1])
 
     def test_new_ai_requires_session_and_human_forbids_it(self):
         for client, session in (("codex", None), ("human", "unexpected")):
@@ -423,11 +423,11 @@ class RollTests(unittest.TestCase):
 
     def test_unicode_human_author_and_custom_role(self):
         meta = self.metadata()
-        meta["participants"][-1].update(name="Андрей Латышев", role="Sponsor")
+        meta["participants"][-1].update(name="Иван Петров", role="Sponsor")
         self.initialize(meta)
-        result = self.send(sender="Андрей Латышев")
+        result = self.send(sender="Иван Петров")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(" — Андрей Латышев\n", self.roll.read_text())
+        self.assertIn(" — Иван Петров\n", self.roll.read_text(encoding="utf-8"))
         self.assertEqual(self.command("watch", "--once").returncode, 0)
 
     def test_no_curator_saves_without_adapter_and_watch_emits_no_message(self):
@@ -437,9 +437,9 @@ class RollTests(unittest.TestCase):
         self.codex.unlink()
         result = self.send()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("no curator", result.stdout)
+        self.assertIn("no Curator", result.stdout)
         self.assertNotIn("message-roll:message", self.command("watch", "--once").stdout)
-        # Registering a curator exposes retained messages, rather than losing them.
+        # Registering a Curator exposes retained messages rather than losing them.
         self.assertEqual(self.register({"name": "NewCurator", "role": "Curator", "client": "claude", "session_id": "new"}).returncode, 0)
         self.assertIn("message-roll:message m1", self.command("watch", "--once").stdout)
 
@@ -447,8 +447,8 @@ class RollTests(unittest.TestCase):
         self.initialize(self.metadata("codex"))
         self.assertEqual(self.register({"name": "NewCurator", "role": "Curator", "client": "codex", "session_id": "new"}).returncode, 0)
         self.assertEqual(self.register({"name": "Last", "role": "Observer", "client": "human"}).returncode, 0)
-        self.assertEqual(self.send(sender="Moderator_1").returncode, 0)
-        args = json.loads((self.root / "queue.json").read_text())
+        self.assertEqual(self.send(sender="Curator_1").returncode, 0)
+        args = json.loads((self.root / "queue.json").read_text(encoding="utf-8"))
         self.assertEqual(args[:3], ["queue", "--thread", "new"])
         (self.root / "queue.json").unlink()
         self.assertEqual(self.send("m2", sender="NewCurator").returncode, 0)
@@ -469,12 +469,12 @@ class RollTests(unittest.TestCase):
         # A retained legacy entry is readable, but not a usable delivery address.
         meta = self.read_metadata()
         meta["participants"][0].pop("session_id")
-        self.roll.write_text("---\n" + yaml.safe_dump(meta, sort_keys=False) + "---\n\n")
+        self.roll.write_text("---\n" + yaml.safe_dump(meta, sort_keys=False) + "---\n\n", encoding="utf-8")
         result = self.send()
         self.assertEqual(result.returncode, 3)
         self.assertIn("no recoverable session_id", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
-        self.assertIn("**Message:** `m1`", self.roll.read_text())
+        self.assertIn("**Message:** `m1`", self.roll.read_text(encoding="utf-8"))
 
     def test_tmux_window_requires_session_and_session_cannot_change(self):
         meta = self.metadata()
@@ -516,7 +516,7 @@ class RollTests(unittest.TestCase):
             with self.subTest(command=arguments[0]):
                 result = self.command(*arguments)
                 self.assertEqual(result.returncode, 1, result.stdout)
-                self.assertIn("convert the roll before use", result.stderr)
+                self.assertIn("older frontmatter format", result.stderr)
                 self.assertNotIn("Traceback", result.stderr)
                 self.assertEqual(self.roll.read_bytes(), before)
 

@@ -70,7 +70,7 @@ def metadata_from(text, *, require_sessions=False):
     meta = mapping_from(text)
     identifier(meta.get("roll-type"), "roll-type")
     if "coordinator" in meta or "tmux_session" in meta:
-        raise ValueError("Legacy MessageRoll frontmatter (coordinator, tmux_session) is not supported; convert the roll before use.")
+        raise ValueError("This roll uses an older frontmatter format (coordinator, tmux_session) that the helper does not read; stop writers and rewrite the frontmatter by hand to the current schema in references/message-roll-operations.md.")
     if "tmux-session" in meta:
         identifier(meta["tmux-session"], "tmux-session")
     participants = meta.get("participants")
@@ -270,15 +270,15 @@ def append(path, sender, message_id, body):
 def notify(meta, sender, message_id, roll_ref, codex, timeout):
     coordinator = current_coordinator(meta)
     if coordinator is None:
-        return "no curator; message saved without notification"
+        return "no Curator; message saved without notification"
     if sender == coordinator["name"]:
-        return "coordinator message; no self-notification"
+        return "Curator message; no self-notification"
     if coordinator["client"] == "claude":
         return "available to Claude watch; delivery requires an active Monitor"
     if coordinator["client"] != "codex":
         raise ValueError(f"No notification adapter for client {coordinator['client']!r}; arrange and verify one explicitly.")
     if not coordinator.get("session_id"):
-        raise ValueError("Current curator has no recoverable session_id; register a new verified curator session.")
+        raise ValueError("The current Curator has no recoverable session_id; register a new verified Curator session.")
     if codex is None:
         raise ValueError("codex is missing; on macOS with Homebrew run: brew install --cask codex. On other platforms use the official Codex installation instructions.")
     result = subprocess.run(
@@ -289,7 +289,7 @@ def notify(meta, sender, message_id, roll_ref, codex, timeout):
     )
     if result.returncode:
         raise ValueError(f"codex queue exited {result.returncode}: {result.stderr.strip() or result.stdout.strip()}")
-    return "queued; coordinator handling is not yet confirmed"
+    return "queued; Curator handling is not yet confirmed"
 
 
 def watch(path, after, once, poll_seconds, health_seconds):
@@ -310,7 +310,7 @@ def watch(path, after, once, poll_seconds, health_seconds):
             print("message-roll:ready", flush=True)
             initialized = True
         elif meta != previous_meta and current_coordinator(meta) is not None:
-            print("message-roll:metadata changed; reconcile participants and coordinator", flush=True)
+            print("message-roll:metadata changed; reconcile participants and the Curator", flush=True)
         for record in records:
             if record["message_id"] not in seen:
                 coordinator = current_coordinator(meta)
@@ -356,7 +356,7 @@ def main():
             command.add_argument("--message-id", required=True)
             command.add_argument("--sender", required=True)
             command.add_argument("--body", type=absolute_path, required=True)
-            command.add_argument("--roll-ref", required=True, help="Alpha path used in coordinator notification")
+            command.add_argument("--roll-ref", required=True, help="Alpha path used in the Curator notification")
             command.add_argument("--notify-timeout", type=positive_seconds, default=20)
         else:
             command.add_argument("--after", help="Last handled message ID; default replays existing messages")
