@@ -1,6 +1,6 @@
 # Duet Work
 
-A library of skills for working with an AI assistant. Some of them belong to [Duet](https://github.com/alatyshau/duet), a human–AI operating environment; the rest work on their own.
+A library of skills for working with an AI assistant. Some of them belong to [Duet](https://github.com/Duet-Lab/duet), a human–AI operating environment; the rest work on their own.
 
 Each skill is a folder under `skills/` with a `SKILL.md` in the Anthropic skill format, so it can be loaded by Claude Code, claude.ai and other clients that read that format. Experimental system prompts live under `system-prompts/`; the public `duet-core` prompt ships with Duet, not this repository.
 
@@ -42,7 +42,7 @@ Each file under `system-prompts/` is a Claude Code output style. A business gets
 
 ### Public foundation: `duet-core`
 
-The public foundation is [`packages/instructions/duet-core.md` in Duet](https://github.com/alatyshau/duet/blob/main/packages/instructions/duet-core.md). Host installs it as the `duet-core` output style. This repository does not carry a second copy.
+The public foundation is [`packages/instructions/duet-core.md` in Duet](https://github.com/Duet-Lab/duet/blob/main/packages/instructions/duet-core.md). Host installs it as the `duet-core` output style. This repository does not carry a second copy.
 
 Use `duet-core` by itself for the standard Duet environment, or explicitly invoke the `duet-work` skill on top of it for the experimental work format. A business using the standard foundation does not need a `system_prompt` override. While the skills are being stabilized, this repository is private and access is granted personally.
 
