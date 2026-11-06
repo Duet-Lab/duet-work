@@ -4,6 +4,8 @@ Read this before you create or edit my notepad, the `notepad.md` file in a work 
 
 `INDEX.md` remains the map an agent uses to pick up the work cold. The notepad is for me, so it holds only what I use.
 
+**The notepad is how I follow the work; the chat is where I write.** I should never need to read your chat replies to know where the work stands or what waits on me. So at the end of every turn that changed the work's state, reread the whole notepad as the only text I will see and make it true: each status current, every decision or action that waits on me present as its own H3 — including one that is easy to overlook, such as ending a pause I called — and nothing left that no longer needs me. Updating it item by item as messages arrive is not enough, because removing answered questions can leave the notepad looking empty while something still waits on me.
+
 ## Structure
 
 ```markdown
@@ -64,6 +66,8 @@ The results, reviews and reasoning of executors live in their rolls and review b
 ## Agents in tmux
 
 Each topic lists the agents actually running for it, grouped under the roll they talk in: first the roll's alpha path with a few words on its purpose, then for each agent its tmux window, client, model and effort, role and whether it is working or idle. Take this from `tmux` at the time of writing, not from the roll's participant list or an earlier map: a recorded participant may be gone, and a pane may be running something else. An agent that has finished but still holds a window is shown as finished, along with a question about whether to close it. This is a live snapshot for me, not a roster: participant identities stay in the roll's frontmatter.
+
+Participants outside tmux belong in the notepad too, because they are part of the work as much as the agents in windows. For example, consultants I talk to in a browser chat and relay to you get one H3 each after `Agents in tmux`, with the consultant's name in the heading, so that I never mix up what goes to whom. Each says how that consultant is reached, whether it has an assignment and what it last delivered; when it has an assignment, the section also says exactly what to send it and what to bring back.
 
 ## Starting and migrating
 
