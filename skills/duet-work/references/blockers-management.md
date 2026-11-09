@@ -21,7 +21,7 @@ The person must grasp a blocker in one reading, at a glance; this matters more t
 - a level-1 heading with a plain name of the blocker;
 - **Summary:** one or two sentences on what is at stake, then a bold line saying who it waits on and what exactly is needed;
 - **Status:** a one- or two-sentence summary of where the discussion stands, kept current;
-- a section headed with the person's name, added once they first speak about this blocker: their words about it;
+- a section headed with the person's name, added once they first speak about this blocker: their thoughts about it, written in their best form as "My thoughts in their best form" in `SKILL.md` describes;
 - **Agent's verdict:** what you propose and why, briefly; rewrite it when your proposal changes, so that it never contradicts the status.
 
 ## The map
