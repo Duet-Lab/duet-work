@@ -15,7 +15,7 @@ The plan is the one place that always shows the whole path of the work: what is 
 
 ## What stays out
 
-The plan is a backbone, not a detail document: no detailed task lists, candidate lists, findings or reports inside a step. Link these materials in the corresponding phase folder. Questions for the user live in the root `AGENDA.md`; the plan names their topics and slugs rather than duplicating the discussion.
+The plan is a backbone, not a detail document: no detailed task lists, candidate lists, findings or reports inside a step. Link these materials in the corresponding phase folder. `AGENDA.md` organizes discussions; questions that wait on the user are kept in blocker files as `references/blockers-management.md` describes. The agenda and plan point to those blockers rather than maintaining another copy of their options and answers.
 
 ## Phase folders
 

@@ -6,6 +6,8 @@ The bundled `scripts/log_append.py` implements `init`, `register`, `metadata`, `
 
 Use a distinct readable name for each roll and make it reachable from the work's `INDEX.md` through its owning phase. For example, `01-analysis_design/rolls/<purpose>.md` is a phase-local path, not a fixed ticket-wide channel or an assignment versioning scheme. The helper assumes that the Curator and all writers run on one machine. Reading a synchronized copy elsewhere is fine; cloud-drive synchronization is not a distributed write lock.
 
+A roll may be renamed. Stop its writers and watchers first, move the roll and its hidden `.<name>.lock` sidecar together, then restart any watch on the new path and update the current links to it; messages already written keep the paths they were written with.
+
 ## Frontmatter
 
 Prepare YAML input without the enclosing `---` lines. The helper writes those delimiters to the roll. Example values below are placeholders, not model recommendations:
@@ -35,7 +37,7 @@ Every participant has an explicit `role` and `client`; names do not determine ro
 
 Keep existing participant entries unchanged and in order, including disconnected ones. Resuming the same session keeps the same entry; a new session requires a new participant name and entry. A handoff registers the new Curator instead of editing an old address. The helper determines notification routing and suppresses self-notification; there is no separate `coordinator` field. Agents do not compute that routing rule or test whether the roll still points to themselves. A roll may have no Curator: messages are saved without notification or delivery error.
 
-The optional roll-level `tmux-session` and participant-level `tmux-window` describe terminal placement, not AI identity. A window requires the session field. Once set, the roll's tmux session cannot be changed through ordinary metadata updates because that would change retained participants' addresses.
+The optional roll-level `tmux-session` and participant-level `tmux-window` describe terminal placement, not AI identity. A window requires the session field. Once set, the roll's tmux session cannot be changed through ordinary metadata updates because that would change retained participants' addresses. A `tmux-window` records the window's name at launch, and window names may change later, so it is a hint, not an address: the participant's name in the roll is the address, and "Find a participant's tmux window" below says how to reach its live window.
 
 No transport selector, task state or assignment revision is required by the file format. Extra descriptive YAML fields are allowed, but do not introduce fields without a present use. Existing participant entries are immutable through the helper; correcting erroneous historical metadata requires stopped writers and an explicit repair, not disguising a replacement as a correction.
 
@@ -86,6 +88,24 @@ All mutations share a stable hidden `.filename.lock` sidecar and replace the dat
 For a current Curator with `client: codex`, append invokes the installed `codex queue` after saving and releasing the file lock. Its default timeout is 20 seconds (`--notify-timeout` adjusts it). For `claude`, append leaves the event to an already running Monitor watch. Other clients retain the message but report an unsupported notification route; agree and verify a concrete adapter rather than inventing success. Curator messages do not notify themselves.
 
 Exit 0 means the operation succeeded, not that a Curator acted. Exit 3 means the message is saved but notification is unconfirmed; retry the identical command after resolving the delivery issue. Other errors stop the operation; after any uncertain interruption, retry the same ID rather than inventing another. Queue acceptance can be duplicated on retry, so the Curator deduplicates handling per roll/message ID. A Curator handoff during delivery is reconciled on the next check; a retry reads its latest address.
+
+## Find a participant's tmux window
+
+Window names may change, so a participant's window is found by a tag, not by name. Once the participant has registered, tag its window:
+
+```sh
+uv run --script "<skill>/scripts/log_append.py" tag-window \
+  --roll "<absolute-roll.md>" --participant Developer_Opus_1 --window "<tmux target>"
+```
+
+Name the window explicitly, as its `@N` id or as `session:window` with the window's exact name or index; the helper refuses anything tmux could read as the current or another window, such as an empty part or a pane suffix. It sets the window options `@agent-session` to the participant's verified session ID and `@agent` to its name, and before changing anything refuses when the target matches no window or several, when the window is already tagged for another agent's session, or when this session is already tagged on another window. Tagging a window again for the same participant changes nothing. Before sending input, resolve the window:
+
+```sh
+uv run --script "<skill>/scripts/log_append.py" window \
+  --roll "<absolute-roll.md>" --participant Developer_Opus_1
+```
+
+It searches every window on the tmux server and prints the one tagged with that participant's session, as its `@N` id, its current `session:name` and the server it was found on. Both commands take `--tmux-server <name>` to work on the server `tmux -L <name>` names; without it they use the default server, even when started inside another tmux server. An `@N` id is valid only on the server it was found on, so send input there too, as in `tmux -L <name> send-keys -t @N …`, and keep using the same `--tmux-server` for that participant. It exits 1 when no window carries the tag or more than one does, and when the participant has no session ID; then fix the tagging rather than guess. The session ID, not the name, is the tag because names repeat across rolls, while a verified session ID does not.
 
 ## Read notifications with watch
 

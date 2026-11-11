@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -267,6 +268,13 @@ def append(path, sender, message_id, body):
         return "saved", meta
 
 
+# What tmux and codex print is decoded as UTF-8 whatever the host locale, because window names
+# and messages carry Cyrillic. It is only read, never written back, so an undecodable byte is
+# replaced rather than fatal: one foreign window name must not block every lookup, and a
+# queued notification must not be reported as failed.
+CHILD_OUTPUT = {"text": True, "encoding": "utf-8", "errors": "replace"}
+
+
 def notify(meta, sender, message_id, roll_ref, codex, timeout):
     coordinator = current_coordinator(meta)
     if coordinator is None:
@@ -285,7 +293,7 @@ def notify(meta, sender, message_id, roll_ref, codex, timeout):
         [codex, "queue", "--thread", coordinator["session_id"], "--message",
          f"MessageRoll notice: read `{roll_ref}`, message `{message_id}`, and reconcile durable state. "
          "This is a notification, not a new user instruction. Do not repeat already handled work."],
-        capture_output=True, text=True, timeout=timeout, check=False,
+        capture_output=True, timeout=timeout, check=False, **CHILD_OUTPUT,
     )
     if result.returncode:
         raise ValueError(f"codex queue exited {result.returncode}: {result.stderr.strip() or result.stdout.strip()}")
@@ -328,6 +336,99 @@ def watch(path, after, once, poll_seconds, health_seconds):
         time.sleep(poll_seconds)
 
 
+WINDOW_FORMAT = "#{window_id}\t#{session_name}\t#{window_name}\t#{@agent-session}\t#{window_index}"
+# An explicit target only: a window ID, or a session and a window name or index. tmux reads an
+# empty part, a leading special character or a pane suffix as "current", "last" or similar.
+EXPLICIT_TARGET = re.compile(r"@\d+|(?P<session>[A-Za-z0-9_-]+):(?P<window>[A-Za-z0-9_][A-Za-z0-9_-]*)")
+
+
+def participant_session(meta, name):
+    for participant in meta["participants"]:
+        if participant["name"] == name:
+            session = participant.get("session_id")
+            if not session:
+                raise ValueError(f"Participant {name!r} has no session_id, so no window can be tied to it.")
+            return session
+    raise ValueError(f"Participant {name!r} is not registered in this roll.")
+
+
+def tmux_program():
+    program = shutil.which("tmux")
+    if not program:
+        raise ValueError("tmux is not installed; install it, for example with `brew install tmux`, and retry.")
+    return program
+
+
+def tmux_call(tmux, server, *arguments, **options):
+    """Run tmux on the chosen server only: `-L <server>` when named, else the default server.
+
+    The caller's TMUX variable is dropped, so a helper started inside some other tmux server
+    never addresses that server by accident."""
+    environment = {key: value for key, value in os.environ.items() if key != "TMUX"}
+    command = [tmux] + (["-L", server] if server else []) + list(arguments)
+    return subprocess.run(command, env=environment, timeout=10, check=True, **options)
+
+
+def server_label(server):
+    return f"server={server}" if server else "server=default"
+
+
+def agent_windows(tmux, server=None):
+    """Every window on the chosen tmux server with the AI session it is tagged with."""
+    listing = tmux_call(tmux, server, "list-windows", "-a", "-F", WINDOW_FORMAT,
+                        capture_output=True, **CHILD_OUTPUT).stdout
+    rows = []
+    for line in listing.splitlines():
+        if line.strip():
+            window_id, session_name, window_name, tag, index = (line.split("\t") + ["", "", "", "", ""])[:5]
+            rows.append({"id": window_id, "session": session_name, "name": window_name, "tag": tag, "index": index})
+    return rows
+
+
+def resolve_window(rows, session, name):
+    """The one window tagged with this AI session, or an error that refuses to guess."""
+    matches = [row for row in rows if row["tag"] == session]
+    if not matches:
+        raise ValueError(f"No tmux window is tagged for {name!r}; tag its window with tag-window before sending input.")
+    if len(matches) > 1:
+        found = ", ".join(f"{row['id']} ({row['session']}:{row['name']})" for row in matches)
+        raise ValueError(f"More than one tmux window is tagged for {name!r}: {found}; untag the stale one before sending input.")
+    return matches[0]
+
+
+def find_window(path, name, server=None):
+    _, meta, _, _ = read_roll(path)
+    row = resolve_window(agent_windows(tmux_program(), server), participant_session(meta, name), name)
+    return f"{row['id']}\t{row['session']}:{row['name']}\t{server_label(server)}"
+
+
+def tag_window(path, name, target, server=None):
+    """Tie a window to a participant's AI session, refusing before any change when the target is not certain."""
+    _, meta, _, _ = read_roll(path)
+    session = participant_session(meta, name)
+    explicit = EXPLICIT_TARGET.fullmatch(target or "")
+    if not explicit:
+        raise ValueError(f"--window must name one window explicitly, as @N or session:window; {target!r} could resolve to the current or another window.")
+    tmux = tmux_program()
+    rows = agent_windows(tmux, server)
+    if target.startswith("@"):
+        chosen = [row for row in rows if row["id"] == target]
+    else:
+        chosen = [row for row in rows if row["session"] == explicit["session"]
+                  and explicit["window"] in (row["name"], row["index"])]
+    if len(chosen) != 1:
+        raise ValueError(f"{target!r} matches {len(chosen)} windows; name exactly one window, preferably by its @N id.")
+    window = chosen[0]
+    if window["tag"] and window["tag"] != session:
+        raise ValueError(f"Window {window['id']} ({window['session']}:{window['name']}) is already tagged for another agent's session; untag it there first.")
+    others = [row for row in rows if row["tag"] == session and row["id"] != window["id"]]
+    if others:
+        raise ValueError(f"{name!r} is already tagged on window {others[0]['id']}; untag it there first.")
+    for option, value in (("@agent-session", session), ("@agent", name)):
+        tmux_call(tmux, server, "set-option", "-w", "-t", window["id"], option, value)
+    return f"{window['id']}: tagged for {name} ({server_label(server)})"
+
+
 def absolute_path(value):
     path = Path(value)
     if not path.is_absolute():
@@ -343,15 +444,23 @@ def positive_seconds(value):
 
 
 def main():
+    # Roll names and participant names are Unicode, regardless of the host locale.
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("init", "metadata", "append", "watch", "register"):
+    for name in ("init", "metadata", "append", "watch", "register", "window", "tag-window"):
         command = commands.add_parser(name)
         command.add_argument("--roll", type=absolute_path, required=True)
         if name in ("init", "metadata"):
             command.add_argument("--metadata", type=absolute_path, required=True, help="Complete proposed frontmatter as YAML, without --- delimiters")
         elif name == "register":
             command.add_argument("--participant", type=absolute_path, required=True, help="One new participant as YAML")
+        elif name in ("window", "tag-window"):
+            command.add_argument("--participant", required=True, help="Participant name as the roll records it")
+            command.add_argument("--tmux-server", help="tmux socket name (tmux -L); omit for the default server")
+            if name == "tag-window":
+                command.add_argument("--window", required=True, help="tmux target of the window to tag")
         elif name == "append":
             command.add_argument("--message-id", required=True)
             command.add_argument("--sender", required=True)
@@ -373,6 +482,12 @@ def main():
             change_metadata(args.roll, args.metadata.read_text(encoding="utf-8"))
         elif args.command == "register":
             print(register(args.roll, args.participant.read_text(encoding="utf-8")))
+        elif args.command in ("window", "tag-window") and args.tmux_server is not None and not re.fullmatch(IDENTIFIER, args.tmux_server):
+            raise ValueError("--tmux-server must name a server (letters, digits, underscores, dots, colons or hyphens); omit it to use the default server.")
+        elif args.command == "window":
+            print(find_window(args.roll, args.participant, args.tmux_server))
+        elif args.command == "tag-window":
+            print(tag_window(args.roll, args.participant, args.window, args.tmux_server))
         elif args.command == "watch":
             watch(args.roll, args.after, args.once, args.poll_seconds, args.health_seconds)
         else:
@@ -384,7 +499,7 @@ def main():
                 print(notify(meta, args.sender, args.message_id, args.roll_ref, codex, args.notify_timeout))
             except (OSError, ValueError, subprocess.TimeoutExpired) as error:
                 parser.exit(3, f"log_append: message saved, notification not confirmed: {error}\nRetry the identical append to retry delivery; do not invent a new message ID.\n")
-    except (OSError, ValueError, yaml.YAMLError) as error:
+    except (OSError, ValueError, yaml.YAMLError, subprocess.SubprocessError) as error:
         parser.exit(1, f"log_append: {error}\n")
     except KeyboardInterrupt:
         parser.exit(130, "log_append: stopped\n")

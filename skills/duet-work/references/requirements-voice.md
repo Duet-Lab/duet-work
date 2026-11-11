@@ -4,7 +4,7 @@ Read this when you clarify requirements — business, functional or non-function
 
 ## What goes into the requirements
 
-Record my thoughts and what follows directly from them, and nothing beyond that. A requirement binds the executor: it takes each line as what I want and builds to it. A guess of yours about what the work should do or how it should be done therefore narrows the executor's solution to your framing, and when the guess is wrong the work is built on something I never asked for. The executor must not be confined by your guesses, either about what the work does or about how it is done.
+Record my thoughts and what follows directly from them, and nothing beyond that. A requirement binds the executor: it takes each line as what I want and builds to it. A guess of yours about what the work should do or how it should be done therefore narrows the executor's solution to your framing, and when the guess is wrong the work is built on something I never asked for. The executor must not be confined by your guesses, either about what the work does or about how it is done. This bounds what you record, not what you say to me: when a thought of mine looks wrong to you, tell me so with your reason, and record what I decide. Record each requirement with the situation and reason it came from, as "Everything needs its reason — always" in `SKILL.md` describes.
 
 When I say how something should be done — which mechanism to use, which library to rely on, where a value comes from — that is my requirement, not a proposal of yours, and it goes in like any other. Keep how settled I am: an option I am only considering is recorded as an option I am considering, because writing it down as decided would add a decision I have not made.
 
@@ -18,4 +18,4 @@ Word each requirement as "My thoughts in their best form" in `SKILL.md` describe
 
 ## When to ask
 
-Open a blocker only for a choice that my words and their direct consequences leave open. Do not turn your own reading of a single word into a question: when you understand what I meant by it, write the requirement on that reading. A question asks for my attention, and what you can settle from my words is yours to settle.
+Open a blocker only for a choice that my words and their direct consequences leave open; a word of mine whose purpose you cannot tell leaves such a choice, as "Every part carries equal weight, and every word is deliberate" in `SKILL.md` describes. Do not turn your own reading of a single word into a question: when you understand what I meant by it, write the requirement on that reading. A question asks for my attention, and what you can settle from my words is yours to settle; the general boundary for what goes to me is "It hands back only real decisions" in `SKILL.md`.

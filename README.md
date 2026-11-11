@@ -2,11 +2,11 @@
 
 A library of skills for working with an AI assistant. Some of them belong to [Duet](https://github.com/Duet-Lab/duet), a human–AI operating environment; the rest work on their own.
 
-Each skill is a folder under `skills/` with a `SKILL.md` in the Anthropic skill format, so it can be loaded by Claude Code, claude.ai and other clients that read that format. Experimental system prompts live under `system-prompts/`; the public `duet-core` prompt ships with Duet, not this repository.
+Each skill is a folder under `skills/` with a `SKILL.md` in the Anthropic skill format, so it can be loaded by Claude Code, claude.ai and other clients that read that format. Experimental system prompts live under `system-prompts/`, and the `duet-vizier` prompt in the folder of its own skill, `skills/duet-vizier/`; the public `duet-core` prompt ships with Duet, not this repository.
 
 ## Skills
 
-`duet-chat`, `duet-work` and the `duet-workflow` system prompt are alternative conversation formats. Use one per session.
+`duet-chat`, `duet-work` and the `duet-vizier` and `duet-workflow` system prompts are alternative conversation formats. Use one per session.
 
 ### `duet-chat`
 
@@ -14,7 +14,11 @@ A self-contained conversation skill for browser chats and Claude Code. It guides
 
 ### `duet-work`
 
-A conversation skill for Claude Code, tied to a work folder. The skill's argument is the path to the folder: it supplies the context of the work and keeps its results between sessions. Used with the `duet-core` system prompt.
+A conversation skill for Claude Code, tied to a work folder. The skill's argument is the path to the folder: it supplies the context of the work and keeps its results between sessions. Used with the `duet-core` system prompt, and invoked only by the user.
+
+### `duet-vizier`
+
+The skills of the Duet Vizier, a character set by the system prompt in the same folder: an index of the references and scripts that prompt reads from. It stands on its own and does not use `duet-work`; where the two hold the same reference, each keeps its own copy. A business that sets the prompt declares this skill too, so that Duet deploys the library with it. A session under the prompt loads the skill at its start; no other session loads it. The prompt is described under "System prompts" below.
 
 ### `duet-executor`
 
@@ -38,13 +42,17 @@ Know-how for tuning Claude Code and its VS Code extension: where the relevant fi
 
 ## System prompts
 
-Each file under `system-prompts/` is a Claude Code output style. A business gets one as its system prompt through the `system_prompt` field of its `context.json`, and Duet deploys it to Claude Code, Codex and Kimi Code.
+A system prompt here is a Claude Code output style: `system-prompts/duet-workflow.md`, and `skills/duet-vizier/system-prompt.md`. Two kinds of companion file are never set as a system prompt. A calibration file, named after the prompt file with `-calibration.md` and kept beside it, holds the key and the common reading that Duet's `orientation` returns to a session of that prompt. A specification keeps the reasoning behind a prompt; for `duet-vizier` it is `skills/duet-vizier/docs/system-prompt-spec.md`. A business gets one as its system prompt through the `system_prompt` field of its `context.json`, and Duet deploys it to Claude Code, Codex and Kimi Code, and to Antigravity as a custom agent that a session selects with `agy --agent <name>`.
 
 ### Public foundation: `duet-core`
 
-The public foundation is [`packages/instructions/duet-core.md` in Duet](https://github.com/Duet-Lab/duet/blob/main/packages/instructions/duet-core.md). Host installs it as the `duet-core` output style. This repository does not carry a second copy.
+The public foundation is [`packages/instructions/duet-core.md` in Duet](https://github.com/Duet-Lab/duet/blob/main/packages/instructions/duet-core.md). Host installs it as the `duet-core` output style. This repository does not carry it as a prompt of its own; `duet-vizier` includes its body whole.
 
-Use `duet-core` by itself for the standard Duet environment, or explicitly invoke the `duet-work` skill on top of it for the experimental work format. A business using the standard foundation does not need a `system_prompt` override. While the skills are being stabilized, this repository is private and access is granted personally.
+Use `duet-core` by itself for the standard Duet environment, or invoke the `duet-work` skill on top of it for the experimental work format. The `duet-vizier` system prompt is a character of its own with a skill of its own, and does not use `duet-work`. A business using the standard foundation does not need a `system_prompt` override. While the skills are being stabilized, this repository is private and access is granted personally.
+
+### `duet-vizier`
+
+The Duet Vizier, the faithful version of the Duet assistant, as a business system prompt: `duet-core` whole, a preamble that sets the spirit of the personality, and the personality text in full. Its references and scripts are the `duet-vizier` skill in the same folder, which the business declares under `skills` beside `system_prompt`. Executors in that business are launched with their own prompt, `duet-core` by default. It lives in `skills/duet-vizier/`: the prompt is `system-prompt.md`, and why it is built this way is in `docs/system-prompt-spec.md`. A secular version is planned under the name `duet-assistant`. The prompt is not the legacy `duet-vizir` skill listed above.
 
 ### `duet-workflow`
 

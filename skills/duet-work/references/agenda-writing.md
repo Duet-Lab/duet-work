@@ -18,7 +18,7 @@ Preparing evidence for the current discussion, recording decisions and applying 
 
 - `AGENDA.md` is the top level: a numbered list of the main items in logical order (the order may change), each with a link and a state.
 - A large item gets its own file `agenda/it_<slug>.md`; inside it, every useful piece is a separate item under H3/H4 with the slug `it_X_Y`, `it_X_Y_Z`. The detailed agenda of an item is generated when its turn comes, not in advance.
-- States are defined at the top of the file, for example `waiting`, `in review`, `closed` for files and `waiting`, `accepted`, `cancelled`, `deferred` for items. An item moves to a closed state only on the user's decision.
+- States are defined at the top of the file, for example `waiting`, `in review`, `closed` for files and `waiting`, `accepted`, `canceled`, `deferred` for items. An item moves to a closed state only on the user's decision.
 
 Deferring an item at the agent's discretion changes the conversation order, not its unresolved state or any applicable development gate. Moving a question outside the current work clears that gate only when the user has explicitly agreed to the changed scope. The Curator cannot close the agenda by relabeling its own proposals.
 
@@ -48,6 +48,6 @@ On "next", select the next highest-priority question in logical order, respectin
 
 ## What the file records
 
-For each item: the claim or question in substance, what was checked, the options with their cost, and — once the user has spoken — their decision in their terms and what was done with it (transferred, canceled, where). The agent's proposals that the user has not answered stay marked as the agent's: silence does not close an item.
+Items that wait on the user have blocker files as `references/blockers-management.md` describes. For an item backed by a blocker, keep its discussion order and agenda state here, and link to the blocker for the question, checks, options with their cost, decision and follow-through, including after resolution, rather than copying them. For other items, record the claim or question in substance, what was checked, the options with their cost, and — once the user has spoken — their decision in their terms and what was done with it (transferred, canceled, where). The agent's proposals that the user has not answered stay marked as the agent's: silence does not close an item.
 
 When the agenda changes, inform the participants in a Curator update, including what is now blocked, released or awaiting discussion when that affects them. Use MessageRoll principles (`references/message-roll.md`) when working through rolls. This keeps participants aligned; it does not require repeating the whole agenda or turning the user's current conversation into another status report.

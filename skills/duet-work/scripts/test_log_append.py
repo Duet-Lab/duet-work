@@ -41,8 +41,16 @@ class RollTests(unittest.TestCase):
             "roll = pathlib.Path(os.environ['ROLL']).read_text(encoding='utf-8')\n"
             "assert '<!-- message-roll:end -->' in roll, 'notification preceded durable message'\n"
             "pathlib.Path(os.environ['CAPTURE']).write_text(json.dumps(sys.argv[1:]), encoding='utf-8')\n"
+            "if 'QUEUE_OUTPUT' in os.environ:\n"
+            "    output = pathlib.Path(os.environ['QUEUE_OUTPUT']).read_bytes()\n"
+            "    sys.stdout.buffer.write(output); sys.stderr.buffer.write(output)\n"
             "sys.exit(int(os.environ.get('QUEUE_EXIT', '0')))\n", encoding="utf-8")
         self.codex.chmod(0o700)
+
+    def c_locale(self, **extra):
+        """The host environment forced to the C locale with ASCII stdio, plus any extra variables."""
+        return {**self.environment, "LC_ALL": "C", "PYTHONUTF8": "0",
+                "PYTHONCOERCECLOCALE": "0", "PYTHONIOENCODING": "ascii", **extra}
 
     def metadata(self, client="claude"):
         return {
@@ -57,7 +65,7 @@ class RollTests(unittest.TestCase):
     def command(self, action, *arguments, roll=None, environment=None):
         return subprocess.run(
             [sys.executable, str(SCRIPT), action, "--roll", str(roll or self.roll), *arguments],
-            capture_output=True, text=True, timeout=20, env=environment or self.environment,
+            capture_output=True, text=True, encoding="utf-8", timeout=20, env=environment or self.environment,
         )
 
     def save_metadata_input(self, meta, name="metadata.yaml"):
@@ -275,6 +283,20 @@ class RollTests(unittest.TestCase):
         self.assertEqual(self.roll.read_bytes(), before)
         self.assertTrue((self.root / "queue.json").exists())
 
+    def test_notifier_utf8_output_is_read_under_c_locale(self):
+        self.initialize(self.metadata("codex"))
+        output = self.root / "queue-output.txt"
+        output.write_bytes("Уведомление поставлено в очередь\n".encode("utf-8"))
+        queued = self.send(environment=self.c_locale(QUEUE_OUTPUT=str(output)))
+        self.assertEqual(queued.returncode, 0, queued.stderr)
+        self.assertIn("queued; Curator handling is not yet confirmed", queued.stdout)
+        output.write_bytes("Очередь недоступна\n".encode("utf-8"))
+        failed = self.send("m2", environment=self.c_locale(QUEUE_OUTPUT=str(output), QUEUE_EXIT="7"))
+        self.assertEqual(failed.returncode, 3)
+        self.assertIn("message saved", failed.stderr)
+        self.assertIn("codex queue exited 7: Очередь недоступна", failed.stderr)
+        self.assertNotIn("Traceback", failed.stderr)
+
     def test_missing_codex_reports_installation_without_losing_message(self):
         self.initialize(self.metadata("codex"))
         self.codex.unlink()
@@ -343,7 +365,7 @@ class RollTests(unittest.TestCase):
         self.initialize()
         process = subprocess.Popen(
             [sys.executable, str(SCRIPT), "watch", "--roll", str(self.roll)],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=self.environment,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", env=self.environment,
         )
         try:
             with selectors.DefaultSelector() as selector:
@@ -428,7 +450,22 @@ class RollTests(unittest.TestCase):
         result = self.send(sender="Иван Петров")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(" — Иван Петров\n", self.roll.read_text(encoding="utf-8"))
-        self.assertEqual(self.command("watch", "--once").returncode, 0)
+        for label, environment in (("inherited", self.environment), ("C", self.c_locale())):
+            with self.subTest(locale=label):
+                result = self.command("watch", "--once", environment=environment)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("message-roll:message m1 by Иван Петров\n", result.stdout)
+
+    def test_unicode_cli_error_under_c_locale(self):
+        self.initialize()
+        environment = self.c_locale()
+        participant = {"name": "Рецензент", "role": "Reviewer", "client": "codex"}
+        before = self.roll.read_bytes()
+        result = self.register(participant, environment=environment)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Participant 'Рецензент' requires a verified session_id.", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertEqual(self.roll.read_bytes(), before)
 
     def test_no_curator_saves_without_adapter_and_watch_emits_no_message(self):
         meta = self.metadata()
@@ -495,7 +532,7 @@ class RollTests(unittest.TestCase):
         self.assertEqual(self.send().returncode, 0)
         process = subprocess.Popen(
             [sys.executable, str(SCRIPT), "watch", "--roll", str(self.roll), "--poll-seconds", "0.02", "--health-seconds", "0.05"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=self.environment,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", env=self.environment,
         )
         try:
             with self.assertRaises(subprocess.TimeoutExpired):
@@ -519,6 +556,173 @@ class RollTests(unittest.TestCase):
                 self.assertIn("older frontmatter format", result.stderr)
                 self.assertNotIn("Traceback", result.stderr)
                 self.assertEqual(self.roll.read_bytes(), before)
+
+
+class WindowTests(unittest.TestCase):
+    """Window lookup and tagging against a fake tmux that serves a fixed window list."""
+
+    metadata = RollTests.metadata
+    c_locale = RollTests.c_locale
+    command = RollTests.command
+    save_metadata_input = RollTests.save_metadata_input
+    initialize = RollTests.initialize
+
+    def setUp(self):
+        RollTests.setUp(self)
+        self.calls = self.root / "tmux-calls.json"
+        self.listing = self.root / "tmux-windows.txt"
+        self.listing.write_bytes(b"")
+        self.environment.update(TMUX_CALLS=str(self.calls), TMUX_WINDOWS=str(self.listing))
+        tmux = self.root / "tmux"
+        tmux.write_text(
+            f"#!{sys.executable}\n"
+            "import json, os, pathlib, sys\n"
+            "calls = pathlib.Path(os.environ['TMUX_CALLS'])\n"
+            "log = json.loads(calls.read_text(encoding='utf-8')) if calls.exists() else []\n"
+            "log.append(sys.argv[1:] + (['TMUX=' + os.environ['TMUX']] if 'TMUX' in os.environ else []))\n"
+            "calls.write_text(json.dumps(log), encoding='utf-8')\n"
+            "args = sys.argv[3:] if sys.argv[1] == '-L' else sys.argv[1:]\n"
+            "if args[0] == 'list-windows':\n"
+            "    sys.stdout.buffer.write(pathlib.Path(os.environ['TMUX_WINDOWS']).read_bytes())\n"
+            "", encoding="utf-8")
+        tmux.chmod(0o700)
+        self.initialize()
+
+    def windows(self, *rows):
+        """Serve these rows as tmux's window list; a bytes row is written as it is."""
+        lines = [row if isinstance(row, bytes) else "\t".join(row).encode("utf-8") for row in rows]
+        self.listing.write_bytes(b"".join(line + b"\n" for line in lines))
+
+    def test_window_resolves_the_one_window_tagged_with_the_session(self):
+        self.windows(("@1", "abc001", "1abc_cur", "session-one"), ("@3", "abc001", "2wib_dev", "developer-one"))
+        result = self.command("window", "--participant", "Developer_Gemini_1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "@3\tabc001:2wib_dev\tserver=default")
+
+    def test_window_reads_utf8_and_undecodable_names_under_c_locale(self):
+        self.windows(("@3", "abc001", "2wib_dev", "developer-one", "2"),
+                     ("@4", "other", "Заметки", "", "3"),
+                     b"@5\tother\tbad\xff\t\t4")
+        for label, environment in (("inherited", self.environment), ("C", self.c_locale())):
+            with self.subTest(locale=label):
+                result = self.command("window", "--participant", "Developer_Gemini_1", environment=environment)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.strip(), "@3\tabc001:2wib_dev\tserver=default")
+
+    def test_window_still_refuses_two_tagged_windows_under_c_locale(self):
+        self.windows(("@3", "abc001", "2wib_dev", "developer-one", "2"),
+                     ("@4", "other", "Заметки", "developer-one", "3"))
+        result = self.command("window", "--participant", "Developer_Gemini_1", environment=self.c_locale())
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("More than one tmux window is tagged", result.stderr)
+        self.assertIn("other:Заметки", result.stderr)
+
+    def test_window_refuses_when_no_window_is_tagged(self):
+        self.windows(("@1", "abc001", "1abc_cur", "session-one"))
+        result = self.command("window", "--participant", "Developer_Gemini_1")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("No tmux window is tagged", result.stderr)
+
+    def test_window_refuses_when_two_windows_carry_the_same_tag(self):
+        self.windows(("@3", "abc001", "2wib_dev", "developer-one"), ("@9", "abc001", "old_dev", "developer-one"))
+        result = self.command("window", "--participant", "Developer_Gemini_1")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("More than one tmux window", result.stderr)
+
+    def test_same_name_in_another_roll_does_not_match_a_different_session(self):
+        # Names repeat across rolls; the tag is the AI session, which does not.
+        self.windows(("@4", "abc001", "1abc_dev", "another-roll-session"))
+        result = self.command("window", "--participant", "Developer_Gemini_1")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("No tmux window is tagged", result.stderr)
+
+    def test_window_refuses_a_participant_without_session(self):
+        result = self.command("window", "--participant", "Alex")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("has no session_id", result.stderr)
+
+    def test_tag_window_sets_both_options_on_the_resolved_window(self):
+        self.windows(("@7", "abc001", "2wib_dev", "", "2"))
+        result = self.command("tag-window", "--participant", "Developer_Gemini_1", "--window", "abc001:2wib_dev")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = json.loads(self.calls.read_text(encoding="utf-8"))
+        self.assertIn(["set-option", "-w", "-t", "@7", "@agent-session", "developer-one"], calls)
+        self.assertIn(["set-option", "-w", "-t", "@7", "@agent", "Developer_Gemini_1"], calls)
+
+    def test_window_uses_the_named_server_and_reports_it(self):
+        self.windows(("@3", "abc001", "2wib_dev", "developer-one", "2"))
+        result = self.command("window", "--participant", "Developer_Gemini_1", "--tmux-server", "agents")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(result.stdout.strip().endswith("\tserver=agents"))
+        calls = json.loads(self.calls.read_text(encoding="utf-8"))
+        self.assertTrue(all(call[:2] == ["-L", "agents"] for call in calls), calls)
+
+    def test_tag_window_keeps_the_named_server_for_every_call(self):
+        self.windows(("@7", "abc001", "2wib_dev", "", "2"))
+        result = self.command("tag-window", "--participant", "Developer_Gemini_1", "--window", "@7", "--tmux-server", "agents")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = json.loads(self.calls.read_text(encoding="utf-8"))
+        self.assertTrue(calls and all(call[:2] == ["-L", "agents"] for call in calls), calls)
+
+    def test_an_empty_server_name_is_refused_before_any_tmux_call(self):
+        self.windows(("@7", "abc001", "2wib_dev", "", "2"))
+        for action, extra in (("tag-window", ["--window", "@7"]), ("window", [])):
+            result = self.command(action, "--participant", "Developer_Gemini_1", *extra, "--tmux-server", "")
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("--tmux-server must name a server", result.stderr)
+        self.assertFalse(self.calls.exists())
+
+    def test_default_server_ignores_the_callers_tmux_variable(self):
+        # A helper started inside another tmux server must not address that server by accident.
+        self.environment["TMUX"] = "/tmp/tmux-test/other,1,0"
+        self.windows(("@3", "abc001", "2wib_dev", "developer-one", "2"))
+        result = self.command("window", "--participant", "Developer_Gemini_1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = json.loads(self.calls.read_text(encoding="utf-8"))
+        self.assertFalse(any(arg.startswith("TMUX=") for call in calls for arg in call), calls)
+        self.assertFalse(any("-L" in call for call in calls), calls)
+
+    def assert_tag_refused(self, target, message):
+        result = self.command("tag-window", "--participant", "Developer_Gemini_1", "--window", target)
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn(message, result.stderr)
+        calls = json.loads(self.calls.read_text(encoding="utf-8")) if self.calls.exists() else []
+        self.assertFalse(any(call[0] == "set-option" for call in calls), calls)
+
+    def test_tag_window_refuses_an_empty_target(self):
+        self.windows(("@7", "abc001", "2wib_dev", "", "2"))
+        self.assert_tag_refused("", "must name one window explicitly")
+
+    def test_tag_window_refuses_a_target_with_an_empty_window_part(self):
+        self.windows(("@7", "abc001", "2wib_dev", "", "2"))
+        self.assert_tag_refused("abc001:", "must name one window explicitly")
+
+    def test_tag_window_refuses_special_and_pane_targets(self):
+        self.windows(("@7", "abc001", "2wib_dev", "", "2"))
+        for target in ("abc001:!", "abc001:{last}", "abc001:2wib_dev.1", ":2wib_dev", "2wib_dev"):
+            self.assert_tag_refused(target, "must name one window explicitly")
+
+    def test_tag_window_refuses_a_name_that_matches_no_window_exactly(self):
+        # tmux would match a prefix of a window name; the helper demands an exact name.
+        self.windows(("@7", "abc001", "2wib_dev", "", "2"))
+        self.assert_tag_refused("abc001:2wib", "matches 0 windows")
+
+    def test_tag_window_refuses_a_window_tagged_for_another_agent(self):
+        self.windows(("@7", "abc001", "2wib_dev", "session-one", "2"))
+        self.assert_tag_refused("@7", "already tagged for another agent's session")
+
+    def test_tag_window_retags_its_own_window_idempotently(self):
+        self.windows(("@7", "abc001", "2wib_dev", "developer-one", "2"))
+        result = self.command("tag-window", "--participant", "Developer_Gemini_1", "--window", "abc001:2")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_tag_window_refuses_when_the_session_is_tagged_elsewhere(self):
+        self.windows(("@2", "abc001", "old_dev", "developer-one", "1"), ("@7", "abc001", "2wib_dev", "", "2"))
+        result = self.command("tag-window", "--participant", "Developer_Gemini_1", "--window", "abc001:2wib_dev")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("already tagged on window @2", result.stderr)
+        calls = json.loads(self.calls.read_text(encoding="utf-8"))
+        self.assertFalse(any(call[0] == "set-option" for call in calls))
 
 
 if __name__ == "__main__":
