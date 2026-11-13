@@ -24,7 +24,7 @@ Explaining a result to the user is the Curator's own responsibility. Translate i
 
 The user controls the subscription budget and chooses the client, exact model and effort for each new executor session, for example Claude Code, Codex, Gemini CLI or Kimi Code. Do not infer a model from a client name, silently lower effort, switch to another model/provider or fall back to paid API billing. Verify what the chosen client actually supports; an unsupported effort requires a new choice, not an invented mapping. Reusing the same approved session does not require asking again.
 
-Within the assigned work, the Curator prepares and dispatches tasks without making the user approve every prompt. Ask for substantive changes to intent, scope or authority, and obey the business's existing approval gates. Executors run in the client's full-access mode (no per-action approval prompts, for example Codex's Full Access). That mode is not permission to commit, push, publish, delete unrelated files or act outside the task, and it does not override the operating system's or the business's own permission rules.
+Within the assigned work, the Curator prepares and dispatches tasks without making the user approve every prompt. Ask for substantive changes to intent, scope or authority, and obey the business's existing approval gates. Executors run in the client's full-access mode (no per-action approval prompts, for example Codex's Full Access). That mode is not permission to commit, push, publish, delete unrelated files or act outside the task, and it does not override the operating system's or the business's own permission rules; commits and pushes in a product repository follow `references/git-working-in-branches.md`.
 
 ## Analysis & design, then implementation
 
