@@ -1,6 +1,6 @@
 # Development curation in Claude Code
 
-Read this when the Curator runs in Claude Code. Executors may use any client. Team responsibilities are in `references/dev-curation.md`; shared principles and file operations are in MessageRoll (`references/message-roll.md`) and MessageRoll operations (`references/message-roll-operations.md`). This reference explains actual observation, not a different team protocol.
+Read this when the Curator runs in Claude Code. Executors may use any client. Team responsibilities are in `references/dev-curation.md`; shared principles and file operations are in MessageRoll (`duet-tools/references/message_roll.md`) and MessageRoll operations (`duet-tools/references/message_roll/operations.md`). This reference explains actual observation, not a different team protocol.
 
 ## Verify the observation mechanism
 
@@ -8,10 +8,10 @@ Check the available tools and the official Monitor reference (https://code.claud
 
 ## Normal delivery: append → watch stdout → Monitor
 
-Register your participant entry with `role: Curator`, `client: claude` and your verified session ID. The helper selects the recipient from participants. Before dispatching work, start a Monitor with this command after resolving paths:
+Register your participant entry with `role: Curator`, `client: claude` and your verified session ID. The helper selects the recipient from participants. Before dispatching work, start a Monitor with this command after resolving paths, where `<duet-tools>` is the folder of the deployed skill `duet-tools`:
 
 ```sh
-uv run --script "<skill>/scripts/log_append.py" watch \
+uv run --script "<duet-tools>/scripts/message_roll/log_append.py" watch \
   --roll "<absolute-roll.md>" --after "<last-handled-message-id>"
 ```
 

@@ -94,7 +94,7 @@ Two sections with the same layout, one subsection per topic however many rolls i
 A topic's subsection lists all its agents, a blank line between them for breathing room.
 
 - **The role** in bold, named by the work the agent does — developer, reviewer, designer — in a word I recognize, not taken from the agent's name in its roll. Do not label an agent "author"; use the role that names its actual work.
-- **The model** in parentheses, then the agent's tmux window under its current name, as the helper's `window` command in `references/message-roll-operations.md` finds it, or "no window" when no live window carries its tag.
+- **The model** in parentheses, then the agent's tmux window under its current name, as the helper's `window` command in `duet-tools/references/message_roll/operations.md` finds it, or "no window" when no live window carries its tag.
 - **The status** as a sub-item, saying what the agent works on, or what it waits for and from whom, so that I see who acts next. An agent with no assignment left reads "finished, no assignments", not a bare "waiting"; when it still holds a window, the status adds that the window can be closed. That is a status line, never a blocker: I decide when windows close.
 - **A consultant outside tmux**, such as a model I talk to in a browser chat, is listed the same way, with "no window, browser chat" in place of the window, and a status saying whether it has an assignment and, if so, what to send it and what to bring back.
 

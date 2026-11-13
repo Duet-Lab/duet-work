@@ -1,6 +1,6 @@
 # Development curation in Codex
 
-Read this when the Curator runs in the **Codex VS Code extension or Codex in a terminal**. Team responsibilities are in `references/dev-curation.md`; shared principles and file operations are in MessageRoll (`references/message-roll.md`) and MessageRoll operations (`references/message-roll-operations.md`). Do not require the desktop app or move the Curator there to obtain scheduling.
+Read this when the Curator runs in the **Codex VS Code extension or Codex in a terminal**. Team responsibilities are in `references/dev-curation.md`; shared principles and file operations are in MessageRoll (`duet-tools/references/message_roll.md`) and MessageRoll operations (`duet-tools/references/message_roll/operations.md`). Do not require the desktop app or move the Curator there to obtain scheduling.
 
 ## Verify the notification route
 

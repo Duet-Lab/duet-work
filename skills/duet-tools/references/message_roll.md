@@ -1,10 +1,10 @@
 # MessageRoll principles
 
-Read this when organizing or joining a shared conversation through files. A **MessageRoll**, or roll, is a Markdown record of messages for a particular purpose, with named participants and, when needed, a Curator. It preserves the exchange across clients and sessions; it is not itself a task, a topic or a running agent.
+Read this when organizing or joining a shared conversation through files. A **MessageRoll**, or roll, is a Markdown record of messages for a particular purpose, with named participants and, when needed, a Curator. It preserves the exchange across clients and sessions; it is not itself a task, a part of the work such as a topic or a phase, or a running agent.
 
 ## Purpose and participants
 
-The Curator creates a roll for the conversation that is needed and keeps its purpose and participants clear. A ticket may have any number of rolls, and a topic may contain more than one. A design discussion and a round-table exchange can use the same basic format without sharing a development process. The procedure using the roll determines when to create it and what counts as a result.
+The Curator creates a roll for the conversation that is needed and keeps its purpose and participants clear. A ticket may have any number of rolls, and one part of the work may contain more than one. A design discussion and a round-table exchange can use the same basic format without sharing a development process. The procedure using the roll determines when to create it and what counts as a result.
 
 The user sets intent and authority. The Curator connects participants and mediates the exchange; it does not become the owner of their technical judgment. Participants may use different clients and models. Their roles describe responsibilities, and each participant owns its own judgment.
 
@@ -22,9 +22,9 @@ Participants read relevant artifacts directly. The Curator need not collect or r
 
 ## Curator updates
 
-The Curator moderates the work's shared conversation. Maintain its shared context, including the ticket's thesaurus. Extract terms from the user's requests and all participants' contributions, and refine them through discussion; do not wait for someone to request glossary maintenance. Preserve the distinction between established meanings and unresolved disputes.
+The Curator moderates the work's shared conversation. Maintain its shared context, including the ticket's thesaurus and any other shared source the procedure keeps. Extract terms from the user's requests and all participants' contributions, and refine them through discussion; do not wait for someone to request glossary maintenance. Preserve the distinction between established meanings and unresolved disputes.
 
-When shared context changes, inform all participants through an ordinary Curator message: say what changed, what it means for the discussion or work, and link the current source. Group related changes into a useful update rather than announcing every edit. Across rolls, reference the same authoritative thesaurus instead of making local copies. No special message type or metadata field is needed.
+When shared context changes, inform all participants through an ordinary Curator message: say what changed, what it means for the discussion or work, and link the current source. Group related changes into a useful update rather than announcing every edit. Across rolls, reference the same authoritative thesaurus or other shared source instead of making local copies. No special message type or metadata field is needed.
 
 Publishing the update and reaching participants are separate responsibilities. Deliver it to current participants through the procedure's verified invocation mechanism; bring returning or replacement participants up to date before they continue. Do not restart disconnected agents just to announce a change. A change affecting ongoing work needs timely delivery, not merely a note waiting for someone to discover it; an update itself is not permission to resume blocked work.
 
@@ -36,6 +36,6 @@ After an interruption, reconcile the retained messages, current Curator and actu
 
 ## Format and operation
 
-Frontmatter identifies `roll-type` and ordered `participants`; the Curator has `role: Curator`, with its client and session ID in that same entry. The helper selects the notification recipient, not the agents. A roll without a Curator still saves messages, but does not notify anyone. Messages retain authorship, timestamps and IDs. Keep this record useful independently of a particular workflow: topics, code-review rules and client-specific automation should not become mandatory message semantics.
+Frontmatter identifies `roll-type` and ordered `participants`; the Curator has `role: Curator`, with its client and session ID in that same entry. The helper selects the notification recipient, not the agents. A roll without a Curator still saves messages, but does not notify anyone. Messages retain authorship, timestamps and IDs. Keep this record useful independently of a particular workflow: topics, phases, code-review rules and client-specific automation should not become mandatory message semantics.
 
-Before creating, changing metadata or appending, read MessageRoll operations (`references/message-roll-operations.md`). It specifies the current schema, helpers and concurrency/delivery limits. For software work, Development curation (`references/dev-curation.md`) applies these principles to engineers, topics and review; it does not redefine the roll.
+Before creating, changing metadata or appending, read MessageRoll operations (`references/message_roll/operations.md`). It specifies the current schema, helpers and concurrency/delivery limits. A procedure that uses rolls, such as the curation of software development, applies these principles to its own participants and review; it does not redefine the roll.

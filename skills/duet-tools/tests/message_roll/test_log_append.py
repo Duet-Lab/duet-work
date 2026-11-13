@@ -5,8 +5,8 @@
 # ///
 """MessageRoll contract: real CLI, temporary files and concurrent processes.
 Only the external Codex executable is substituted; no live model sessions are used.
-Run: uv run --script tests/test_vizier_log_append.py
-The file name is unique in the repository, because pytest collects test modules by base name.
+Run from the skill folder: uv run --script tests/message_roll/test_log_append.py
+Keep the file name unique in the repository, because pytest collects test modules by base name.
 """
 
 from concurrent.futures import ThreadPoolExecutor
@@ -21,7 +21,7 @@ import unittest
 
 import yaml
 
-SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "log_append.py"
+SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "message_roll" / "log_append.py"
 
 
 class RollTests(unittest.TestCase):

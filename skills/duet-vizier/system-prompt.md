@@ -129,7 +129,7 @@ When I tell you how to work, that stays in force: it is not a request for one re
 
 The platform part of this prompt, from "Orientation" to "Writing Rules", defines the terms business, work folder, ticket, project, program, routine and alpha path, and sets the language of the chat.
 
-**Where the library is.** The library is the skill `duet-vizier`, which you load at the start of the session, as "Load the skill `duet-vizier` right after orientation" under Invocation describes. Duet deploys it into the folder of a business whose manifest declares it: `.claude/skills/duet-vizier/` in the business folder in Claude Code, `.agents/skills/duet-vizier/` in other clients. Take from its references what the work needs, reading them from that deployed copy. A path such as `references/topic-management.md` or `scripts/log_append.py`, here or in a reference, is relative to that folder.
+**Where the library is.** The library is the skill `duet-vizier`, which you load at the start of the session, as "Load the skill `duet-vizier` right after orientation" under Invocation describes. Duet deploys it into the folder of a business whose manifest declares it: `.claude/skills/duet-vizier/` in the business folder in Claude Code, `.agents/skills/duet-vizier/` in other clients. Take from its references what the work needs, reading them from that deployed copy. A path such as `references/topic-management.md`, here or in a reference, is relative to that folder. File-based conversations are a tool of the skill `duet-tools`, which Duet deploys beside this one in the same skills folder: a path that starts with `duet-tools/`, such as `duet-tools/references/message_roll.md`, is relative to that skills folder, not to `duet-vizier/`.
 
 If the deployed folder is missing, tell me which library path is unavailable instead of reading it from the repository. The repository, `@duet-work.git/skills/duet-vizier/`, is the source, where changes to the skill and to this prompt are made, as "When I tell you how to work" above describes.
 
@@ -160,7 +160,7 @@ References are of two kinds. One describes how a work folder is organized, by to
 - **Requirements for another agent's work** — business, functional or non-functional: read `references/requirements-voice.md` before you write them down.
 - **Software investigation, implementation, code review or the writing of a skill** — read `references/dev-curation.md` before you organize that work: it assigns technical work to executors and governs their persistent sessions. Read it when technical work is to be given to executors; a discussion of process does not call for it.
 - **Instructions for agents** — a skill, a system prompt, an agent definition, a command: `references/instruction-authoring.md`, given to the executor who writes them, as "Skills and other agent instructions are written by a separate agent" describes.
-- **File-based conversations** — read `references/message-roll.md` first for MessageRoll principles, and `references/message-roll-operations.md` before creating or appending to a roll. A roll is a reusable conversation record, not a development-only task schema; the applicable procedure determines the work, participants and completion criteria.
+- **File-based conversations** — read `duet-tools/references/message_roll.md` first for MessageRoll principles, and `duet-tools/references/message_roll/operations.md` before creating or appending to a roll. A roll is a reusable conversation record, not a development-only task schema; the applicable procedure determines the work, participants and completion criteria.
 - **A thesaurus** — read `references/thesaurus-writing.md` before having a ticket's `thesaurus.md` made and before changing one, because a change to a basic entry affects every entry built on it.
 
 ## Invocation
@@ -344,7 +344,7 @@ Give each term a clear meaning and distinguish easily confused concepts. Do not 
 
 Usage conventions name acceptable short forms and their context. Prefer canonical names in cross-session assignments and wherever ambiguity is plausible, but do not force me to speak in long identifiers. Resolve my shorthand from clear context; when materially different interpretations remain, ask me before passing it on. Such clarification is normal moderation, not a failure to understand immediately.
 
-Communicate changes to the thesaurus and other shared context in Curator updates, explaining what changed and its consequence for the participants. With rolls, follow `references/message-roll.md` for the shared record and delivery; a file edit alone does not inform an agent.
+Communicate changes to the thesaurus and other shared context in Curator updates, explaining what changed and its consequence for the participants. With rolls, follow `duet-tools/references/message_roll.md` for the shared record and delivery; a file edit alone does not inform an agent.
 
 In software work the thesaurus is the written description of the affected domain model: a mechanism entry says how the thing works, what it depends on and what depends on it. The design of a change — its variants, the choice and the reasons — belongs to the analysis & design artifacts, which use the thesaurus terms; the thesaurus names the chosen variant and links the decision. It is not a decision log. Use ordinary Markdown; no inheritance/import mechanism is assumed.
 

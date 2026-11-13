@@ -14,11 +14,11 @@ A self-contained conversation skill for browser chats and Claude Code. It guides
 
 ### `duet-work`
 
-A conversation skill for Claude Code, tied to a work folder. The skill's argument is the path to the folder: it supplies the context of the work and keeps its results between sessions. Used with the `duet-core` system prompt, and invoked only by the user.
+A conversation skill for Claude Code, tied to a work folder. The skill's argument is the path to the folder: it supplies the context of the work and keeps its results between sessions. Used with the `duet-core` system prompt, and invoked only by the user. It reads the MessageRoll tool from `duet-tools`, so a business that uses it declares `duet-tools` too.
 
 ### `duet-vizier`
 
-The skills of the Duet Vizier, a character set by the system prompt in the same folder: an index of the references and scripts that prompt reads from. It stands on its own and does not use `duet-work`; where the two hold the same reference, each keeps its own copy. A business that sets the prompt declares this skill too, so that Duet deploys the library with it. A session under the prompt loads the skill at its start; no other session loads it. The prompt is described under "System prompts" below.
+The skills of the Duet Vizier, a character set by the system prompt in the same folder: an index of the references and scripts that prompt reads from. It does not use `duet-work`; where the two hold the same reference, each keeps its own copy. Both read the MessageRoll tool from `duet-tools`. A business that sets the prompt declares this skill and `duet-tools` too, so that Duet deploys the library and its tools with it. A session under the prompt loads the skill at its start; no other session loads it. The prompt is described under "System prompts" below.
 
 ### `duet-executor`
 
@@ -30,7 +30,7 @@ The skills of the Duet Vizier, a character set by the system prompt in the same 
 
 ### `duet-tools`
 
-An index of standalone tool scripts, one folder per tool, invoked only on request (never auto-loaded). Currently holds `session_history_converter`, which splits an AI conversation into one markdown file per turn — from a Claude Code or local ChatGPT Code/Work session, a claude.ai, ChatGPT or Gemini export, a Google AI Mode export or saved page, or a DeepSeek export — and can save the whole conversation as a dated, named folder, finding Claude Code sessions by workspace folder and local Codex / ChatGPT Code/Work sessions by title, ID or workspace. Comes with a catalog of the ways those exports are made. Scripts run through `uv` and leave no environment or cache behind next to them.
+An index of standalone tool scripts, one folder per tool, invoked only on request (never auto-loaded). Other skills may name its references and scripts by path, which works without loading it. It holds `message_roll`, the MessageRoll helper for conversations kept in a Markdown file among people and AI sessions in any client, with its principles and operations, used by `duet-work` and `duet-vizier`; and `session_history_converter`, which splits an AI conversation into one markdown file per turn — from a Claude Code or local ChatGPT Code/Work session, a claude.ai, ChatGPT or Gemini export, a Google AI Mode export or saved page, or a DeepSeek export — and can save the whole conversation as a dated, named folder, finding Claude Code sessions by workspace folder and local Codex / ChatGPT Code/Work sessions by title, ID or workspace. Comes with a catalog of the ways those exports are made. Scripts run through `uv` and leave no environment or cache behind next to them.
 
 ### `duet-setup-claude`
 

@@ -1,10 +1,10 @@
 # MessageRoll operations
 
-Read MessageRoll principles (`references/message-roll.md`) before using these operations. This describes the bundled local helper, not the definition of a development workflow.
+Read MessageRoll principles (`references/message_roll.md`) before using these operations. This describes the bundled local helper, not the definition of a development workflow. Paths in this file are relative to the folder of the `duet-tools` skill; in commands, `<duet-tools>` stands for that folder's absolute path, which in a business folder is the deployed copy beside the other skills, such as `.claude/skills/duet-tools/` in Claude Code.
 
-The bundled `scripts/log_append.py` implements `init`, `register`, `metadata`, `append` and `watch` on macOS/Linux. Use `uv run --script`; its pinned YAML dependency lives in uv's cache, never in the business folder. If uv is missing, stop and give `brew install uv` on macOS with Homebrew, or verify the installation command for the actual platform. Client notifications still require a reachable real Curator; local tests are not proof of live delivery.
+The bundled `scripts/message_roll/log_append.py` implements `init`, `register`, `metadata`, `append`, `watch`, `tag-window` and `window` on macOS/Linux. Use `uv run --script`; its pinned YAML dependency lives in uv's cache, never in the business folder. If uv is missing, stop and give `brew install uv` on macOS with Homebrew, or verify the installation command for the actual platform. Client notifications still require a reachable real Curator; local tests are not proof of live delivery.
 
-Use a distinct readable name for each roll and make it reachable from the work's `INDEX.md` through its owning topic. For example, `01_design/rolls/<purpose>.md` is a path inside one topic, not a fixed ticket-wide channel or an assignment versioning scheme. The helper assumes that the Curator and all writers run on one machine. Reading a synchronized copy elsewhere is fine; cloud-drive synchronization is not a distributed write lock.
+Use a distinct readable name for each roll and make it reachable from the work's `INDEX.md` through the part of the work that owns it, such as a topic or a phase. For example, `01_design/rolls/<purpose>.md` is a path inside one such part, not a fixed ticket-wide channel or an assignment versioning scheme. The helper assumes that the Curator and all writers run on one machine. Reading a synchronized copy elsewhere is fine; cloud-drive synchronization is not a distributed write lock.
 
 A roll may be renamed. Stop its writers and watchers first, move the roll and its hidden `.<name>.lock` sidecar together, then restart any watch on the new path and update the current links to it; messages already written keep the paths they were written with.
 
@@ -46,10 +46,10 @@ No transport selector, task state or assignment revision is required by the file
 Resolve the helper, roll and input paths before invoking commands. The parent directory must exist. Metadata input is the complete proposed frontmatter, not a patch. Prefer `register` to add one participant atomically. For a full metadata update, start from the current frontmatter; stale input that drops or reorders someone is rejected.
 
 ```sh
-uv run --script "<skill>/scripts/log_append.py" init \
+uv run --script "<duet-tools>/scripts/message_roll/log_append.py" init \
   --roll "<absolute-roll.md>" --metadata "<absolute-metadata.yaml>"
 
-uv run --script "<skill>/scripts/log_append.py" metadata \
+uv run --script "<duet-tools>/scripts/message_roll/log_append.py" metadata \
   --roll "<absolute-roll.md>" --metadata "<absolute-metadata.yaml>"
 ```
 
@@ -60,7 +60,7 @@ uv run --script "<skill>/scripts/log_append.py" metadata \
 The assignment names the participant and role. First discover your own actual session ID through the client's verified session mechanism; never substitute a process ID, tmux window or guessed UUID. Then prepare one YAML mapping containing your name, role, client, session ID and actual launch choices, and register yourself:
 
 ```sh
-uv run --script "<skill>/scripts/log_append.py" register \
+uv run --script "<duet-tools>/scripts/message_roll/log_append.py" register \
   --roll "<absolute-roll.md>" --participant "<absolute-participant.yaml>"
 ```
 
@@ -71,7 +71,7 @@ This appends one participant under the same lock as message writes, without repl
 Save the detailed result first when a message points to it. Then use one operation for saving the message and notifying the Curator (the helper's code calls the Curator the coordinator):
 
 ```sh
-uv run --script "<skill>/scripts/log_append.py" append \
+uv run --script "<duet-tools>/scripts/message_roll/log_append.py" append \
   --roll "<absolute-roll.md>" --roll-ref '@ABC001/01-analysis_design/rolls/discussion.md' \
   --message-id contribution-1 --sender Participant_Gemini_1 \
   --body "<absolute-body.md>"
@@ -94,14 +94,14 @@ Exit 0 means the operation succeeded, not that a Curator acted. Exit 3 means the
 Window names may change, so a participant's window is found by a tag, not by name. Once the participant has registered, tag its window:
 
 ```sh
-uv run --script "<skill>/scripts/log_append.py" tag-window \
+uv run --script "<duet-tools>/scripts/message_roll/log_append.py" tag-window \
   --roll "<absolute-roll.md>" --participant Developer_Opus_1 --window "<tmux target>"
 ```
 
 Name the window explicitly, as its `@N` id or as `session:window` with the window's exact name or index; the helper refuses anything tmux could read as the current or another window, such as an empty part or a pane suffix. It sets the window options `@agent-session` to the participant's verified session ID and `@agent` to its name, and before changing anything refuses when the target matches no window or several, when the window is already tagged for another agent's session, or when this session is already tagged on another window. Tagging a window again for the same participant changes nothing. Before sending input, resolve the window:
 
 ```sh
-uv run --script "<skill>/scripts/log_append.py" window \
+uv run --script "<duet-tools>/scripts/message_roll/log_append.py" window \
   --roll "<absolute-roll.md>" --participant Developer_Opus_1
 ```
 
@@ -112,10 +112,10 @@ It searches every window on the tmux server and prints the one tagged with that 
 For a client that observes command output, `watch` emits notices for complete messages rather than executing their contents:
 
 ```sh
-uv run --script "<skill>/scripts/log_append.py" watch \
+uv run --script "<duet-tools>/scripts/message_roll/log_append.py" watch \
   --roll "<absolute-roll.md>" --after "<last-handled-message-id>"
 ```
 
 Omit `--after` to replay retained non-Curator messages. `--once` prints pending notices and exits; otherwise polling defaults to one second and a health-check notice to 300 seconds (`--poll-seconds` and `--health-seconds`). Without a Curator, watch emits no message, metadata-change or health-check notices after its initial ready line; retained messages become available when a Curator registers. A tick is not an agent-health test. Reconcile the message and saved state before acting; repeated notices must not duplicate work.
 
-The Curator's verified observation arrangements for development work are described in `references/dev-curation-claude.md` and `references/dev-curation-codex.md`. Other uses need their own observation arrangement; saving a message does not establish one.
+The procedure that uses a roll describes how its Curator observes the participants, for each client the Curator runs in; saving a message does not establish an observation arrangement.

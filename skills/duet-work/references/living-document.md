@@ -1,6 +1,6 @@
 # Living Document
 
-Read this when the user asks to continue a conversation as one document they will read and react to, rather than as a chain of replies. It is a special mode of work the user requests; nothing switches it on by itself. Before creating the roll, read MessageRoll principles (`references/message-roll.md`) and operations (`references/message-roll-operations.md`); the rules here govern what the document and the cycle are, not how a roll is stored.
+Read this when the user asks to continue a conversation as one document they will read and react to, rather than as a chain of replies. It is a special mode of work the user requests; nothing switches it on by itself. Before creating the roll, read MessageRoll principles (`duet-tools/references/message_roll.md`) and operations (`duet-tools/references/message_roll/operations.md`); the rules here govern what the document and the cycle are, not how a roll is stored.
 
 ## What the mode is for
 

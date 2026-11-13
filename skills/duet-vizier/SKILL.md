@@ -17,14 +17,13 @@ The Duet Vizier is a character set by that system prompt, `system-prompt.md` in 
 - `references/requirements-voice.md`: requirements for work that another agent implements.
 - `references/dev-curation.md`: software investigation, implementation, code review and the writing of a skill, done by executors. `references/dev-curation-claude.md` and `references/dev-curation-codex.md` describe, for each client, how the Curator observes its executors.
 - `references/instruction-authoring.md`: writing instructions for agents; it is given to the executor who writes them.
-- `references/message-roll.md` and `references/message-roll-operations.md`: file-based conversations, their principles and the helper's operations.
 - `references/thesaurus-writing.md`: a ticket's thesaurus.
 - `references/business-curation.md`: the procedure of the `business-curation` routine.
 
-## Scripts
+## Tools from `duet-tools`
 
-- `scripts/log_append.py`: the MessageRoll helper. `references/message-roll-operations.md` describes its commands; run it as `uv run --script scripts/log_append.py`, so that nothing is installed beside it on a synced drive. Its tests are `tests/test_vizier_log_append.py`.
+File-based conversations, MessageRolls, are not in this folder: they are a tool of the skill `duet-tools`, because every participant of a roll uses them, not only the Curator. The system prompt says where that skill is deployed and when to read its references.
 
 ## The system prompt's own files
 
-`system-prompt.md`, its companion `system-prompt-calibration.md` and the folder `docs/` belong to the system prompt and are not part of the library. A business sets the prompt through the `system_prompt` field of its manifest and declares this skill in `skills`, so that Duet deploys the library with it.
+`system-prompt.md`, its companion `system-prompt-calibration.md` and the folder `docs/` belong to the system prompt and are not part of the library. A business sets the prompt through the `system_prompt` field of its manifest and declares this skill and `duet-tools` in `skills`, so that Duet deploys the library and its tools with it.

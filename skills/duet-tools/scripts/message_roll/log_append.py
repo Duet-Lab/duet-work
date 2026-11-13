@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["PyYAML==6.0.2"]
 # ///
-"""Local Markdown MessageRoll operations. Run: uv run --script log_append.py --help."""
+"""Local Markdown MessageRoll operations. Run: uv run --script scripts/message_roll/log_append.py --help."""
 
 import argparse
 from contextlib import contextmanager
@@ -71,7 +71,7 @@ def metadata_from(text, *, require_sessions=False):
     meta = mapping_from(text)
     identifier(meta.get("roll-type"), "roll-type")
     if "coordinator" in meta or "tmux_session" in meta:
-        raise ValueError("This roll uses an older frontmatter format (coordinator, tmux_session) that the helper does not read; stop writers and rewrite the frontmatter by hand to the current schema in references/message-roll-operations.md.")
+        raise ValueError("This roll uses an older frontmatter format (coordinator, tmux_session) that the helper does not read; stop writers and rewrite the frontmatter by hand to the current schema in references/message_roll/operations.md of the duet-tools skill.")
     if "tmux-session" in meta:
         identifier(meta["tmux-session"], "tmux-session")
     participants = meta.get("participants")
