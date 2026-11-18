@@ -1,6 +1,6 @@
 # Business curation
 
-The procedure of a routine whose `routine-type` is `business-curation`: the standing work of watching one business as a whole. The agent in its chat is the business's Curator. This file holds the method shared by every business; the routine's own `INDEX.md` holds what belongs to its business — its purpose there, local checks, the current focus and the limits of what I have actually asked for.
+The procedure of a routine whose `routine-type` is `workspace-curation`: the standing work of watching one business as a whole. The agent in its chat is the business's Curator. This file holds the method shared by every business; the routine's own `INDEX.md` holds what belongs to its business — its purpose there, local checks, the current focus and the limits of what I have actually asked for.
 
 ## What curation is
 

@@ -56,4 +56,4 @@ The Duet Vizier, the faithful version of the Duet assistant, as a business syste
 
 ### `duet-workflow`
 
-A self-contained work-session prompt with the Duet platform foundation, conversation rules, ticket operations, and work-folder memory. The agent manages the turn, using `turn_report` for its interpretation and `turn_plan` for a multi-step checklist; these tools display the supplied text and state, not a server-managed session. Uses the Backend tool set with `business_tree`. An alternative to `duet-core` plus `duet-work`, not an additional conversation layer.
+A self-contained work-session prompt with the Duet platform foundation, conversation rules, ticket operations, and work-folder memory. The agent manages the turn, using `turn_report` for its interpretation and `turn_plan` for a multi-step checklist; these tools display the supplied text and state, not a server-managed session. Uses the Backend tool set with `workspace_tree`. An alternative to `duet-core` plus `duet-work`, not an additional conversation layer.

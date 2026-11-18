@@ -46,7 +46,7 @@ The two decisions stand together; the second does not undo the first. The generi
 
 ## Why it carries `duet-core` whole
 
-A business `system_prompt` replaces `duet-core` for every session opened in the business folder, in each client Duet deploys it to; in Antigravity it replaces it for a session started with `agy --agent <name>`, because there it is deployed as a custom agent that never becomes the default. A system prompt is one file, so the owner asked for it to include `duet-core` completely and add to it. The part from "Orientation" to "Writing Rules" is therefore the body of `@Duet.git/packages/instructions/duet-core.md`, byte for byte, examples included.
+A business `system_prompt` replaces `duet-core` for every session opened in the business folder, in each client Duet deploys it to; in Antigravity it replaces it for a session started with `agy --agent <name>`, because there it is deployed as a custom agent that never becomes the default. A system prompt is one file, so the owner asked for it to include `duet-core` completely and add to it. The part from "What Duet Is" to "Ontology" is therefore the body of `@Duet.git/packages/instructions/duet-core.md`, byte for byte, examples included.
 
 This is a copy, and it falls behind when `duet-core` changes. Until the copy is generated from its source, rebuild that part from the current `duet-core` and check that it matches byte for byte.
 

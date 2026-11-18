@@ -18,7 +18,7 @@ The Duet Vizier is a character set by that system prompt, `system-prompt.md` in 
 - `references/dev-curation.md`: software investigation, implementation, code review and the writing of a skill, done by executors. `references/dev-curation-claude.md` and `references/dev-curation-codex.md` describe, for each client, how the Curator observes its executors.
 - `references/instruction-authoring.md`: writing instructions for agents; it is given to the executor who writes them.
 - `references/thesaurus-writing.md`: a ticket's thesaurus.
-- `references/business-curation.md`: the procedure of the `business-curation` routine.
+- `references/workspace-curation.md`: the procedure of the `workspace-curation` routine.
 
 ## Tools from `duet-tools`
 

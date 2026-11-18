@@ -79,7 +79,7 @@ A short entry of the designation kind, with a prerequisite, a trap, a status and
 
 **Essence.** The folder that holds one piece of work — a project, a program, or a routine — inside a business folder. It is named after the ticket number and a short title (`ABC007_Name`), and the shelf it sits on — `work/`, `backlog/`, or `archive/` — is the state of the work: active, waiting, or closed. The alpha path `@ABC007` (AlphaPath) resolves to it wherever it sits.
 
-**Trap.** "Folder" here means the work's folder, not a business folder or a repository: a business has an `INDEX.md` with `folder-type: business`, a work has one with `folder-type: work`.
+**Trap.** "Folder" here means the work's folder, not a business folder or a repository: a workspace has an `INDEX.md` with `folder-type: workspace`, a ticket has one with `folder-type: ticket`.
 
 **Operationally.** Created only with the `new_ticket` tool and moved between shelves only with `move_ticket` *(documentation: duet-core, "Tickets are managed through Duet")*. It contains an `INDEX.md` with the goal and the plan, plus a `thesaurus.md` when the work needs one.
 
